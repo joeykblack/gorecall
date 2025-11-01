@@ -1,0 +1,110 @@
+import { useState, useRef } from 'preact/hooks'
+import '@sabaki/shudan/css/goban.css'
+import { Goban } from '@sabaki/shudan'
+import { processGame } from './lib/game'
+
+export default function App() {
+  const [signMap, setSignMap] = useState(() => {
+    const size = 19
+    return Array.from({ length: size }, () => Array(size).fill(0))
+  })
+  
+  const [moveNumber, setMoveNumber] = useState(0)
+  const [totalMoves, setTotalMoves] = useState(0)
+  const [error, setError] = useState(null)
+  const [loading, setLoading] = useState(false)
+  
+  async function handleFileSelect(evt) {
+    const file = evt.target.files[0]
+    if (!file) return
+    
+    setLoading(true)
+    setError(null)
+    
+    try {
+      const { signMap: newSignMap, totalMoves: total } = await processGame(file, moveNumber)
+      setSignMap(newSignMap)
+      setTotalMoves(total)
+    } catch (err) {
+      setError(err.message)
+      console.error(err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function handleMoveNumberChange(evt) {
+    const num = parseInt(evt.target.value, 10)
+    if (isNaN(num) || num < 0) return
+    setMoveNumber(num)
+    
+    // If we have a file loaded (indicated by totalMoves > 0), update the position
+    if (totalMoves > 0) {
+      const fileInput = document.querySelector('input[type="file"]')
+      const file = fileInput.files[0]
+      if (file) {
+        setLoading(true)
+        try {
+          const { signMap: newSignMap } = await processGame(file, num)
+          setSignMap(newSignMap)
+        } catch (err) {
+          setError(err.message)
+        } finally {
+          setLoading(false)
+        }
+      }
+    }
+  }
+
+  return (
+    <div className="app">
+      <h1>GoRecall</h1>
+      
+      <div style={{ marginBottom: '1rem' }}>
+        <div style={{ marginBottom: '0.5rem' }}>
+          <label style={{ marginRight: '0.5rem' }}>
+            Move number (0-{totalMoves || '?'}):
+            <input
+              type="number"
+              min="0"
+              max={totalMoves || 999}
+              value={moveNumber}
+              onChange={handleMoveNumberChange}
+              style={{ marginLeft: '0.5rem' }}
+            />
+          </label>
+        </div>
+
+        <div>
+          <label>
+            Select SGF file:
+            <input
+              type="file"
+              accept=".sgf"
+              onChange={handleFileSelect}
+              style={{ marginLeft: '0.5rem' }}
+            />
+          </label>
+        </div>
+
+        {error && (
+          <div style={{ color: 'red', marginTop: '0.5rem' }}>
+            Error: {error}
+          </div>
+        )}
+        
+        {loading && (
+          <div style={{ marginTop: '0.5rem' }}>
+            Loading...
+          </div>
+        )}
+      </div>
+
+      <Goban
+        signMap={signMap}
+        vertexSize={24}
+        showCoordinates={true}
+      />
+    </div>
+  )
+}
