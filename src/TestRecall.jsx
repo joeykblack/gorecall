@@ -3,31 +3,6 @@ import { useState, useCallback } from 'preact/hooks'
 import '@sabaki/shudan/css/goban.css'
 import { Goban } from '@sabaki/shudan'
 
-class ErrorBoundary extends Component {
-  constructor(props) {
-    super(props)
-    this.state = { error: null }
-  }
-
-  componentDidCatch(error) {
-    this.setState({ error })
-    console.error('Render error in TestRecall:', error)
-  }
-
-  render() {
-    if (this.state.error) {
-      return (
-        <div style={{ padding: '1rem', color: 'red' }}>
-          <h3>Rendering error</h3>
-          <pre style={{ whiteSpace: 'pre-wrap' }}>{String(this.state.error && this.state.error.stack ? this.state.error.stack : this.state.error)}</pre>
-        </div>
-      )
-    }
-
-    return this.props.children
-  }
-}
-
 export default function TestRecall() {
   const size = 19
 
@@ -80,7 +55,7 @@ export default function TestRecall() {
   }, [])
 
   return (
-    <div style={{ padding: '1rem' }}>
+    <div className="app">
       <h2>Test Recall</h2>
 
       <div style={{ marginBottom: '0.5rem' }}>
@@ -90,7 +65,7 @@ export default function TestRecall() {
         <button onClick={undo} disabled={moves.length === 0}>Undo</button>
       </div>
 
-      <ErrorBoundary>
+
         <div style={{ position: 'relative', display: 'inline-block' }}>
           <Goban
             signMap={board.map(row => row.map(cell => cell?.sign || 0))}
@@ -100,16 +75,6 @@ export default function TestRecall() {
             onVertexClick={handleVertexClick}
           />
         </div>
-      </ErrorBoundary>
-
-      <div style={{ marginTop: '1rem' }}>
-        <strong>Moves:</strong>
-        <ol>
-          {moves.map((m, i) => (
-            <li key={i}>{i + 1}: {m.sign === 1 ? 'B' : 'W'} @ {String.fromCharCode(97 + m.x)}{String.fromCharCode(97 + m.y)}</li>
-          ))}
-        </ol>
-      </div>
     </div>
   )
 }
