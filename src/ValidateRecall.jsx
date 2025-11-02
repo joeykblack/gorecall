@@ -156,7 +156,13 @@ export default function ValidateRecall() {
         onClick={() => history.back()}
         style={{ marginTop: '1rem' }}
       >
-        Go Back
+        Try Again
+      </button>
+      <button onClick={() => {
+          // Navigate to test recall route in same tab
+          window.location.hash = null
+        }}>
+          Restart
       </button>
     </div>
   )

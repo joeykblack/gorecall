@@ -9,11 +9,23 @@ import ValidateRecall from './ValidateRecall'
 import { Component } from 'preact'
 
 export default function App() {
-  //   If the app was opened with the '#/test' hash, render the TestRecall page
-  if (typeof window !== 'undefined' && window.location.hash === '#/test') {
+  const [currentHash, setCurrentHash] = useState(
+    typeof window !== 'undefined' ? window.location.hash : ''
+  );
+
+  useEffect(() => {
+    const handleHashChange = () => {
+      setCurrentHash(window.location.hash);
+    };
+
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
+  if (currentHash === '#/test') {
     return <TestRecall />
   }
-  if (typeof window !== 'undefined' && window.location.hash === '#/validate') {
+  if (currentHash === '#/validate') {
     return <ValidateRecall />
   }
   const [signMap, setSignMap] = useState(() => {
@@ -182,9 +194,8 @@ export default function App() {
 
       <div style={{ marginBottom: '1rem', marginTop: '1rem' }}>
         <button onClick={() => {
-          // Open a new page (same app) with the test recall route
-          const url = window.location.origin + window.location.pathname + '#/test'
-          window.open(url, '_blank')
+          // Navigate to test recall route in same tab
+          window.location.hash = '#/test'
         }}>
           Test Recall
         </button>

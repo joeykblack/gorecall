@@ -79,8 +79,7 @@ export default function TestRecall() {
         <div style={{ marginTop: '1rem' }}>
           <button onClick={() => {
             localStorage.setItem('testMoves', JSON.stringify(moves))
-            const url = window.location.origin + window.location.pathname + '#/validate'
-            window.open(url, '_blank')
+            window.location.hash = '#/validate'
           }} disabled={moves.length === 0}>
             Validate
           </button>
