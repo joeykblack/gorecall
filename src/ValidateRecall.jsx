@@ -11,6 +11,10 @@ export default function ValidateRecall() {
   const [validationMessage, setValidationMessage] = useState('')
   const [sgfBoard, setSgfBoard] = useState(() => Array(19).fill().map(() => Array(19).fill(null)))
   const [testBoard, setTestBoard] = useState(() => Array(19).fill().map(() => Array(19).fill(null)))
+  const [moveNumber, setMoveNumber] = useState(() => {
+    const saved = localStorage.getItem('moveNumber')
+    return saved ? parseInt(saved, 10) : 0
+  })
 
   useEffect(() => {
     // Load test moves from localStorage
@@ -38,12 +42,11 @@ export default function ValidateRecall() {
           return
         }
         
-        const moveCount = testMoves.length
         // Create a Blob from the stored content and wrap in a File object
         const blob = new Blob([sgfContent], { type: 'application/x-go-sgf' })
         const file = new File([blob], 'stored.sgf', { type: 'application/x-go-sgf' })
         
-        const { signMap, totalMoves } = await processGame(file, moveCount)
+        const { signMap, totalMoves } = await processGame(file, moveNumber)
         setSgfBoard(signMap)
         setSgfMoves(moves => [...moves, { signMap, totalMoves }])
         validate(testMoves, signMap)
@@ -75,13 +78,16 @@ export default function ValidateRecall() {
       return null
     }).filter(Boolean) // Remove nulls for matching moves
 
-    if (mismatches.length === 0) {
+    if (mismatches.length === 0 && moveNumber === testMoves.length) {
       setValidationMessage('All moves match! 🎉')
     } else {
       const mismatchList = mismatches
         .map(m => `Move ${m.moveNumber}`)
         .join('\n')
       setValidationMessage(`Found ${mismatches.length} incorrect moves:\n${mismatchList}`)
+    }
+    if (moveNumber > testMoves.length) {
+        setValidationMessage(prev => prev + `\nYou have set to review up to move ${moveNumber}, but only ${testMoves.length} moves were made.`)
     }
   }
 
@@ -161,10 +167,15 @@ export default function ValidateRecall() {
           Try Again
         </button>
         <button onClick={() => {
-          // Navigate to test recall route in same tab
           window.location.hash = null
         }}>
           Restart
+        </button>
+        <button onClick={() => {
+          
+          window.location.hash = null
+        }}>
+          Next Move
         </button>
       </div>
     </div>
