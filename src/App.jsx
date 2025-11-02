@@ -1,4 +1,4 @@
-import { useState, useRef } from 'preact/hooks'
+import { useState, useRef, useEffect } from 'preact/hooks'
 import '@sabaki/shudan/css/goban.css'
 import { Goban } from '@sabaki/shudan'
 import { processGame } from './lib/game'
@@ -31,6 +31,27 @@ export default function App() {
   const [totalMoves, setTotalMoves] = useState(0)
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
+
+  // On mount, if we have SGF content in localStorage, load it
+  useEffect(() => {
+    const sgfContent = localStorage.getItem('lastSgfContent')
+    if (!sgfContent) return
+
+    setLoading(true)
+    const blob = new Blob([sgfContent], { type: 'application/x-go-sgf' })
+    const file = new File([blob], 'stored.sgf', { type: 'application/x-go-sgf' })
+
+    processGame(file, moveNumber)
+      .then(({ signMap: newSignMap, totalMoves: total }) => {
+        setSignMap(newSignMap)
+        setTotalMoves(total)
+      })
+      .catch(err => {
+        setError(err.message)
+        console.error(err)
+      })
+      .finally(() => setLoading(false))
+  }, [])
   
   async function handleFileSelect(evt) {
     const file = evt.target.files[0]
