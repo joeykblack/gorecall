@@ -21,12 +21,10 @@ export async function parseFile(file) {
           if (!node) return
           
           // Process all nodes in current sequence
-          if (node.nodes) {
-            for (const n of node.nodes) {
-              if (n.B) moves.push(n.B[0])
-              if (n.W) moves.push(n.W[0])
-            }
-          }
+          if (node.data) {
+            if (node.data.B) moves.push(node.data.B[0])
+            if (node.data.W) moves.push(node.data.W[0])
+        }
           
           // Follow main variation (first child)
           if (node.children && node.children.length > 0) {
