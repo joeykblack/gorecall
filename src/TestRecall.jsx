@@ -10,7 +10,16 @@ export default function TestRecall() {
     Array.from({ length: size }, () => Array(size).fill(null))
   )
   const [moves, setMoves] = useState([]) // { x, y, sign }
-  const [nextPlayerIsBlack, setNextPlayerIsBlack] = useState(true)
+  const [nextPlayerIsBlack, setNextPlayerIsBlack] = useState(() => {
+    try {
+      const lastProcessed = localStorage.getItem('lastProcessed')
+      if (lastProcessed) {
+        const { startPlayer } = JSON.parse(lastProcessed)
+        return startPlayer === 1 // true if black (1), false if white (-1)
+      }
+    } catch (e) {}
+    return true // default to black if no lastProcessed
+  })
 
   const placeStone = useCallback((x, y) => {
     if (x == null || y == null) return
@@ -60,7 +69,11 @@ export default function TestRecall() {
 
       <div style={{ marginBottom: '0.5rem' }}>
         <label style={{ marginRight: '1rem' }}>
-          <input type="checkbox" onChange={startWithWhite} /> Start with white
+          <input 
+            type="checkbox" 
+            onChange={startWithWhite}
+            checked={!nextPlayerIsBlack} // checked when starting with white
+          /> Start with white
         </label>
         <button onClick={undo} disabled={moves.length === 0}>Undo</button>
       </div>
