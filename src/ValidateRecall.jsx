@@ -72,7 +72,7 @@ export default function ValidateRecall() {
 
       if (sgfSign !== move.sign) {
         isValid = false
-        message = `Mismatch at move ${move.moveNumber}: ${move.sign === 1 ? 'Black' : 'White'} stone was played at ${String.fromCharCode(97 + move.x)}${String.fromCharCode(97 + move.y)}, but the SGF shows ${sgfSign === 1 ? 'Black' : sgfSign === -1 ? 'White' : 'no stone'}`
+        message = `Mismatch at move ${move.moveNumber}`
       }
     })
 
