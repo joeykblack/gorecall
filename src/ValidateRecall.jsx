@@ -94,7 +94,7 @@ export default function ValidateRecall() {
   }
 
   return (
-    <div style={{ padding: '1rem' }}>
+    <div className="app">
       <h2>Validate Recall</h2>
       
       <div style={{ 
@@ -103,32 +103,16 @@ export default function ValidateRecall() {
         flexWrap: 'wrap',
         alignItems: 'flex-start'
       }}>
-        <div>
-          <h3>Your Moves</h3>
-          <Goban
-            signMap={testBoard.map(row => row.map(cell => cell?.sign || 0))}
-            markerMap={testBoard.map(row => 
-              row.map(cell => cell?.moveNumber ? 
-                ({ type: 'label', label: cell.moveNumber.toString() }) : 
-                null
-              )
-            )}
-            vertexSize={28}
-            showCoordinates={true}
-          />
-        </div>
 
         <div>
-          <h3>SGF Moves</h3>
+          <h3>Compare Moves</h3>
           <Goban
-            signMap={sgfBoard}
-            markerMap={sgfBoard.map((row, y) => 
-              row.map((cell, x) => {
-                const move = testMoves.find(m => m.x === x && m.y === y)
-                return move ? 
-                  ({ type: 'label', label: move.moveNumber.toString() }) : 
-                  null
-              })
+            signMap={sgfBoard.map(row => row.map(cell => cell?.sign || 0))}
+            markerMap={sgfBoard.map(row => 
+                row.map(cell => cell?.moveNumber ? 
+                { type: 'label', label: cell.moveNumber.toString() } : 
+                null
+                )
             )}
             vertexSize={28}
             showCoordinates={true}
