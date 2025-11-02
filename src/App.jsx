@@ -76,6 +76,10 @@ export default function App() {
       .then(({ signMap: newSignMap, totalMoves: total }) => {
         setSignMap(newSignMap)
         setTotalMoves(total)
+        // Persist processed result so other pages can reuse it without reprocessing
+        try {
+          localStorage.setItem('lastProcessed', JSON.stringify({ moveNumber, signMap: newSignMap, totalMoves: total }))
+        } catch (e) {}
         // show persisted filename if present
         try {
           const savedName = localStorage.getItem('lastSgfName')
@@ -100,6 +104,8 @@ export default function App() {
       const { signMap: newSignMap, totalMoves: total } = await processGame(file, moveNumber)
       setSignMap(newSignMap)
       setTotalMoves(total)
+  // Persist processed result for reuse
+  try { localStorage.setItem('lastProcessed', JSON.stringify({ moveNumber, signMap: newSignMap, totalMoves: total })) } catch (e) {}
 
       // Persist filename
       setLastSgfFile(file.name)
@@ -171,6 +177,8 @@ export default function App() {
           if (!mounted) return
           setSignMap(newSignMap)
           setTotalMoves(total)
+          // Persist processed result for reuse
+          try { localStorage.setItem('lastProcessed', JSON.stringify({ moveNumber, signMap: newSignMap, totalMoves: total })) } catch (e) {}
         }
       } catch (err) {
         if (!mounted) return

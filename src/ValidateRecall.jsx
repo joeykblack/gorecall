@@ -35,17 +35,35 @@ export default function ValidateRecall() {
   useEffect(() => {
     async function loadSGF() {
       try {
+        // Prefer using the processed result persisted by App to avoid re-processing the SGF
+        const lastProcessedRaw = localStorage.getItem('lastProcessed')
+        if (lastProcessedRaw) {
+          try {
+            const parsed = JSON.parse(lastProcessedRaw)
+            if (parsed && parsed.moveNumber === moveNumber && parsed.signMap) {
+              setSgfBoard(parsed.signMap)
+              setSgfMoves(m => [...m, { signMap: parsed.signMap, totalMoves: parsed.totalMoves }])
+              validate(testMoves, parsed.signMap)
+              setLoading(false)
+              return
+            }
+          } catch (e) {
+            // fall through to reprocessing if parsing fails
+          }
+        }
+
+        // Fallback: if no persisted processed result for the requested moveNumber, try stored SGF content
         const sgfContent = localStorage.getItem('lastSgfContent')
         if (!sgfContent) {
           setError('No SGF file selected. Go back and load an SGF file first.')
           setLoading(false)
           return
         }
-        
+
         // Create a Blob from the stored content and wrap in a File object
         const blob = new Blob([sgfContent], { type: 'application/x-go-sgf' })
         const file = new File([blob], 'stored.sgf', { type: 'application/x-go-sgf' })
-        
+
         const { signMap, totalMoves } = await processGame(file, moveNumber)
         setSgfBoard(signMap)
         setSgfMoves(moves => [...moves, { signMap, totalMoves }])
