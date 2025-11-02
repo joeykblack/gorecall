@@ -2,8 +2,42 @@ import { useState, useRef } from 'preact/hooks'
 import '@sabaki/shudan/css/goban.css'
 import { Goban } from '@sabaki/shudan'
 import { processGame } from './lib/game'
+import TestRecall from './TestRecall'
+
+// Simple error boundary to catch render-time errors and show them in the UI
+import { Component } from 'preact'
+
+class ErrorBoundary extends Component {
+  constructor(props) {
+    super(props)
+    this.state = { error: null }
+  }
+
+  componentDidCatch(error) {
+    this.setState({ error })
+    // also log
+    console.error('Render error caught by ErrorBoundary:', error)
+  }
+
+  render() {
+    if (this.state.error) {
+      return (
+        <div style={{ padding: '1rem', color: 'red' }}>
+          <h3>Rendering error</h3>
+          <pre style={{ whiteSpace: 'pre-wrap' }}>{String(this.state.error && this.state.error.stack ? this.state.error.stack : this.state.error)}</pre>
+        </div>
+      )
+    }
+
+    return this.props.children
+  }
+}
 
 export default function App() {
+  //   If the app was opened with the '#/test' hash, render the TestRecall page
+  if (typeof window !== 'undefined' && window.location.hash === '#/test') {
+    return <TestRecall />
+  }
   const [signMap, setSignMap] = useState(() => {
     const size = 19
     return Array.from({ length: size }, () => Array(size).fill(0))
@@ -104,17 +138,29 @@ export default function App() {
         )}
       </div>
 
-      <Goban
-        signMap={signMap.map(row => row.map(cell => cell?.sign || 0))}
-        vertexSize={32}
-        showCoordinates={true}
-        markerMap={signMap.map(row => 
-          row.map(cell => cell?.moveNumber ? 
-            { type: 'label', label: cell.moveNumber.toString() } : 
-            null
-          )
-        )}
-      />
+      <div style={{ marginBottom: '1rem' }}>
+        <button onClick={() => {
+          // Open a new page (same app) with the test recall route
+          const url = window.location.origin + window.location.pathname + '#/test'
+          window.open(url, '_blank')
+        }}>
+          Test Recall
+        </button>
+      </div>
+
+      <ErrorBoundary>
+        <Goban
+          signMap={signMap.map(row => row.map(cell => cell?.sign || 0))}
+          vertexSize={32}
+          showCoordinates={true}
+          markerMap={signMap.map(row => 
+            row.map(cell => cell?.moveNumber ? 
+              { type: 'label', label: cell.moveNumber.toString() } : 
+              null
+            )
+          )}
+        />
+      </ErrorBoundary>
     </div>
   )
 }
