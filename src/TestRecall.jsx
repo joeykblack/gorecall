@@ -1,5 +1,5 @@
 import { Component } from 'preact'
-import { useState, useCallback } from 'preact/hooks'
+import { useState, useCallback, useEffect } from 'preact/hooks'
 import '@sabaki/shudan/css/goban.css'
 import { Goban } from '@sabaki/shudan'
 
@@ -74,6 +74,16 @@ export default function TestRecall() {
             showCoordinates={true}
             onVertexClick={handleVertexClick}
           />
+        </div>
+
+        <div style={{ marginTop: '1rem' }}>
+          <button onClick={() => {
+            localStorage.setItem('testMoves', JSON.stringify(moves))
+            const url = window.location.origin + window.location.pathname + '#/validate'
+            window.open(url, '_blank')
+          }} disabled={moves.length === 0}>
+            Validate
+          </button>
         </div>
     </div>
   )

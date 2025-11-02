@@ -3,6 +3,7 @@ import '@sabaki/shudan/css/goban.css'
 import { Goban } from '@sabaki/shudan'
 import { processGame } from './lib/game'
 import TestRecall from './TestRecall'
+import ValidateRecall from './ValidateRecall'
 
 // Simple error boundary to catch render-time errors and show them in the UI
 import { Component } from 'preact'
@@ -11,6 +12,9 @@ export default function App() {
   //   If the app was opened with the '#/test' hash, render the TestRecall page
   if (typeof window !== 'undefined' && window.location.hash === '#/test') {
     return <TestRecall />
+  }
+  if (typeof window !== 'undefined' && window.location.hash === '#/validate') {
+    return <ValidateRecall />
   }
   const [signMap, setSignMap] = useState(() => {
     const size = 19
@@ -21,6 +25,9 @@ export default function App() {
     const saved = localStorage.getItem('moveNumber')
     return saved ? parseInt(saved, 10) : 0
   })
+  
+  // Keep track of last loaded SGF for validation
+  const [lastSgfFile, setLastSgfFile] = useState(null)
   const [totalMoves, setTotalMoves] = useState(0)
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
@@ -36,6 +43,8 @@ export default function App() {
       const { signMap: newSignMap, totalMoves: total } = await processGame(file, moveNumber)
       setSignMap(newSignMap)
       setTotalMoves(total)
+      setLastSgfFile(file)
+      localStorage.setItem('lastSgfFile', file)
     } catch (err) {
       setError(err.message)
       console.error(err)
