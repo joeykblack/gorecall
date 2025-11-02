@@ -105,7 +105,22 @@ export default function ValidateRecall() {
       }}>
 
         <div>
-          <h3>Compare Moves</h3>
+          <h3>Your Moves</h3>
+          <Goban
+            signMap={testBoard.map(row => row.map(cell => cell?.sign || 0))}
+            markerMap={testBoard.map(row => 
+              row.map(cell => cell?.moveNumber ? 
+                ({ type: 'label', label: cell.moveNumber.toString() }) : 
+                null
+              )
+            )}
+            vertexSize={28}
+            showCoordinates={true}
+          />
+        </div>
+
+        <div>
+          <h3>SGF Moves</h3>
           <Goban
             signMap={sgfBoard.map(row => row.map(cell => cell?.sign || 0))}
             markerMap={sgfBoard.map(row => 
