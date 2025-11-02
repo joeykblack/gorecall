@@ -57,26 +57,32 @@ export default function ValidateRecall() {
   }, [testMoves]) // Run when testMoves changes
 
   function validate(testMoves, sgfBoard) {
-    let isValid = true
-    let message = ''
-
     if (testMoves.length === 0) {
       setValidationMessage('No moves to validate')
       return
     }
 
     // Compare each test move with the corresponding position in the SGF board
-    testMoves.forEach(move => {
+    const mismatches = testMoves.map(move => {
       const sgfCell = sgfBoard[move.y][move.x]
       const sgfSign = sgfCell?.sign || 0
 
       if (sgfSign !== move.sign) {
-        isValid = false
-        message = `Mismatch at move ${move.moveNumber}`
+        return {
+          moveNumber: move.moveNumber
+        }
       }
-    })
+      return null
+    }).filter(Boolean) // Remove nulls for matching moves
 
-    setValidationMessage(isValid ? 'All moves match! 🎉' : message)
+    if (mismatches.length === 0) {
+      setValidationMessage('All moves match! 🎉')
+    } else {
+      const mismatchList = mismatches
+        .map(m => `Move ${m.moveNumber}`)
+        .join('\n')
+      setValidationMessage(`Found ${mismatches.length} incorrect moves:\n${mismatchList}`)
+    }
   }
 
   if (error) {
@@ -139,9 +145,10 @@ export default function ValidateRecall() {
         marginTop: '1rem',
         padding: '1rem',
         backgroundColor: validationMessage.includes('match') ? '#e6ffe6' : '#ffe6e6',
-        borderRadius: '4px'
+        borderRadius: '4px',
+        whiteSpace: 'pre-line'
       }}>
-        <strong>Validation Result:</strong>
+        <strong>Result:</strong>
         <p>{validationMessage}</p>
       </div>
 
