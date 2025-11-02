@@ -93,7 +93,6 @@ export default function TestRecall() {
       <ErrorBoundary>
         <div style={{ position: 'relative', display: 'inline-block' }}>
           <Goban
-            style={{ pointerEvents: 'none' }}
             signMap={board.map(row => row.map(cell => cell?.sign || 0))}
             markerMap={board.map(row => row.map(cell => cell?.moveNumber ? ({ type: 'label', label: cell.moveNumber.toString() }) : null))}
             vertexSize={32}
