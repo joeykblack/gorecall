@@ -26,20 +26,21 @@ export function applyMove(prevSignMap, pos, player, moveNumber) {
 }
 
 // Process an SGF file and return moves up to moveNumber
-export async function processGame(file, moveNumber) {
+// startPlayer: 1 for black, -1 for white. Defaults to black.
+export async function processGame(file, moveNumber, startPlayer = 1) {
   try {
     const sgf = await parseFile(file)
     if (!sgf || !sgf.moves || !sgf.moves.length) {
       throw new Error('No moves found in SGF file')
     }
 
-    // Start with an empty board
+  // Start with an empty board
     const size = 19
     let signMap = Array.from({ length: size }, () => Array(size).fill(null))
     
-    // Apply moves up to moveNumber
-    const movesToApply = sgf.moves.slice(0, moveNumber)
-    let player = 1 // Start with black
+  // Apply moves up to moveNumber
+  const movesToApply = sgf.moves.slice(0, moveNumber)
+  let player = startPlayer // Start with provided player
 
     movesToApply.forEach((move, index) => {
       const pos = sgfToPos(move)

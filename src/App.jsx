@@ -37,6 +37,11 @@ export default function App() {
     const saved = localStorage.getItem('moveNumber')
     return saved ? parseInt(saved, 10) : 0
   })
+
+  // When checked, pick a random starting player (1 black, -1 white) for processGame
+  const [randomizeColor, setRandomizeColor] = useState(() => {
+    try { return localStorage.getItem('randomizeColor') === '1' } catch (e) { return false }
+  })
   
   // Listen for moveNumber changes from other parts of the app (same window)
   useEffect(() => {
@@ -63,35 +68,7 @@ export default function App() {
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
 
-  // On mount, if we have SGF content in localStorage, load it
-  useEffect(() => {
-    const sgfContent = localStorage.getItem('lastSgfContent')
-    if (!sgfContent) return
-
-    setLoading(true)
-    const blob = new Blob([sgfContent], { type: 'application/x-go-sgf' })
-    const file = new File([blob], 'stored.sgf', { type: 'application/x-go-sgf' })
-
-    processGame(file, moveNumber)
-      .then(({ signMap: newSignMap, totalMoves: total }) => {
-        setSignMap(newSignMap)
-        setTotalMoves(total)
-        // Persist processed result so other pages can reuse it without reprocessing
-        try {
-          localStorage.setItem('lastProcessed', JSON.stringify({ moveNumber, signMap: newSignMap, totalMoves: total }))
-        } catch (e) {}
-        // show persisted filename if present
-        try {
-          const savedName = localStorage.getItem('lastSgfName')
-          if (savedName) setLastSgfFile(savedName)
-        } catch (e) {}
-      })
-      .catch(err => {
-        setError(err.message)
-        console.error(err)
-      })
-      .finally(() => setLoading(false))
-  }, [])
+  // NOTE: initial SGF processing is handled by the moveNumber effect below
   
   async function handleFileSelect(evt) {
     const file = evt.target.files[0]
@@ -101,11 +78,12 @@ export default function App() {
     setError(null)
     
     try {
-      const { signMap: newSignMap, totalMoves: total } = await processGame(file, moveNumber)
+      const startPlayer = randomizeColor ? (Math.random() < 0.5 ? 1 : -1) : 1
+      const { signMap: newSignMap, totalMoves: total } = await processGame(file, moveNumber, startPlayer)
       setSignMap(newSignMap)
       setTotalMoves(total)
-  // Persist processed result for reuse
-  try { localStorage.setItem('lastProcessed', JSON.stringify({ moveNumber, signMap: newSignMap, totalMoves: total })) } catch (e) {}
+      // Persist processed result for reuse (include startPlayer)
+      try { localStorage.setItem('lastProcessed', JSON.stringify({ moveNumber, signMap: newSignMap, totalMoves: total, startPlayer })) } catch (e) {}
 
       // Persist filename
       setLastSgfFile(file.name)
@@ -139,7 +117,8 @@ export default function App() {
       if (file) {
         setLoading(true)
         try {
-          const { signMap: newSignMap } = await processGame(file, num)
+          const startPlayer = randomizeColor ? (Math.random() < 0.5 ? 1 : -1) : 1
+          const { signMap: newSignMap } = await processGame(file, num, startPlayer)
           setSignMap(newSignMap)
         } catch (err) {
           setError(err.message)
@@ -166,19 +145,23 @@ export default function App() {
     const run = async () => {
       try {
         if (file) {
-          const { signMap: newSignMap, totalMoves: total } = await processGame(file, moveNumber)
-          if (!mounted) return
-          setSignMap(newSignMap)
-          setTotalMoves(total)
-        } else {
-          const blob = new Blob([sgfContent], { type: 'application/x-go-sgf' })
-          const storedFile = new File([blob], 'stored.sgf', { type: 'application/x-go-sgf' })
-          const { signMap: newSignMap, totalMoves: total } = await processGame(storedFile, moveNumber)
+          const startPlayer = randomizeColor ? (Math.random() < 0.5 ? 1 : -1) : 1
+          const { signMap: newSignMap, totalMoves: total } = await processGame(file, moveNumber, startPlayer)
           if (!mounted) return
           setSignMap(newSignMap)
           setTotalMoves(total)
           // Persist processed result for reuse
-          try { localStorage.setItem('lastProcessed', JSON.stringify({ moveNumber, signMap: newSignMap, totalMoves: total })) } catch (e) {}
+          try { localStorage.setItem('lastProcessed', JSON.stringify({ moveNumber, signMap: newSignMap, totalMoves: total, startPlayer })) } catch (e) {}
+        } else {
+          const blob = new Blob([sgfContent], { type: 'application/x-go-sgf' })
+          const storedFile = new File([blob], 'stored.sgf', { type: 'application/x-go-sgf' })
+          const startPlayer = randomizeColor ? (Math.random() < 0.5 ? 1 : -1) : 1
+          const { signMap: newSignMap, totalMoves: total } = await processGame(storedFile, moveNumber, startPlayer)
+          if (!mounted) return
+          setSignMap(newSignMap)
+          setTotalMoves(total)
+          // Persist processed result for reuse
+          try { localStorage.setItem('lastProcessed', JSON.stringify({ moveNumber, signMap: newSignMap, totalMoves: total, startPlayer })) } catch (e) {}
         }
       } catch (err) {
         if (!mounted) return
@@ -191,7 +174,7 @@ export default function App() {
     run()
 
     return () => { mounted = false }
-  }, [moveNumber])
+  }, [moveNumber, randomizeColor])
 
   return (
     <div className="app">
@@ -227,6 +210,19 @@ export default function App() {
               Loaded: <strong>{lastSgfFile}</strong>
             </div>
           )}
+          <label style={{ marginLeft: '1rem', display: 'flex', alignItems: 'center' }}>
+            <input
+              type="checkbox"
+              checked={randomizeColor}
+              onChange={(e) => {
+                const v = !!e.target.checked
+                setRandomizeColor(v)
+                try { localStorage.setItem('randomizeColor', v ? '1' : '0') } catch (e) {}
+              }}
+              style={{ marginRight: '0.5rem' }}
+            />
+            Randomize Color
+          </label>
         </div>
 
         {error && (
