@@ -101,9 +101,15 @@ export default function App() {
       </div>
 
       <Goban
-        signMap={signMap}
-        vertexSize={24}
+        signMap={signMap.map(row => row.map(cell => cell?.sign || 0))}
+        vertexSize={32}
         showCoordinates={true}
+        markerMap={signMap.map(row => 
+          row.map(cell => cell?.moveNumber ? 
+            { type: 'label', label: cell.moveNumber.toString() } : 
+            null
+          )
+        )}
       />
     </div>
   )

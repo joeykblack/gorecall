@@ -10,16 +10,16 @@ export function sgfToPos(move) {
 }
 
 // Create a new board position (signMap) by applying a move
-export function applyMove(prevSignMap, pos, player) {
+export function applyMove(prevSignMap, pos, player, moveNumber) {
   if (!pos) return prevSignMap
   const [x, y] = pos
   
   // Copy the previous board state
   const newSignMap = prevSignMap.map(row => [...row])
   
-  // Apply the move
+  // Apply the move with sequence number
   if (x >= 0 && x < 19 && y >= 0 && y < 19) {
-    newSignMap[y][x] = player // 1 for black, -1 for white
+    newSignMap[y][x] = { sign: player, moveNumber } // Store both color and move number
   }
   
   return newSignMap
@@ -35,16 +35,16 @@ export async function processGame(file, moveNumber) {
 
     // Start with an empty board
     const size = 19
-    let signMap = Array.from({ length: size }, () => Array(size).fill(0))
+    let signMap = Array.from({ length: size }, () => Array(size).fill(null))
     
     // Apply moves up to moveNumber
     const movesToApply = sgf.moves.slice(0, moveNumber)
     let player = 1 // Start with black
 
-    movesToApply.forEach(move => {
+    movesToApply.forEach((move, index) => {
       const pos = sgfToPos(move)
       if (pos) {
-        signMap = applyMove(signMap, pos, player)
+        signMap = applyMove(signMap, pos, player, index + 1) // Pass move number (1-based)
         player = -player // Switch players
       }
     })
