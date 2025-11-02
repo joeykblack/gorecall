@@ -26,8 +26,14 @@ export default function App() {
     return saved ? parseInt(saved, 10) : 0
   })
   
-  // Keep track of last loaded SGF for validation
-  const [lastSgfFile, setLastSgfFile] = useState(null)
+  // Keep track of last loaded SGF filename for display
+  const [lastSgfFile, setLastSgfFile] = useState(() => {
+    try {
+      return localStorage.getItem('lastSgfName')
+    } catch (e) {
+      return null
+    }
+  })
   const [totalMoves, setTotalMoves] = useState(0)
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
@@ -45,6 +51,11 @@ export default function App() {
       .then(({ signMap: newSignMap, totalMoves: total }) => {
         setSignMap(newSignMap)
         setTotalMoves(total)
+        // show persisted filename if present
+        try {
+          const savedName = localStorage.getItem('lastSgfName')
+          if (savedName) setLastSgfFile(savedName)
+        } catch (e) {}
       })
       .catch(err => {
         setError(err.message)
@@ -64,12 +75,16 @@ export default function App() {
       const { signMap: newSignMap, totalMoves: total } = await processGame(file, moveNumber)
       setSignMap(newSignMap)
       setTotalMoves(total)
-      
+
+      // Persist filename
+      setLastSgfFile(file.name)
+      try { localStorage.setItem('lastSgfName', file.name) } catch (e) {}
+
       // Read and store the SGF content
       const reader = new FileReader()
       reader.onload = (evt) => {
         const content = evt.target.result
-        localStorage.setItem('lastSgfContent', content)
+        try { localStorage.setItem('lastSgfContent', content) } catch (e) {}
       }
       reader.readAsText(file)
     } catch (err) {
@@ -123,7 +138,7 @@ export default function App() {
           </label>
         </div>
 
-        <div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <label>
             Select SGF file:
             <input
@@ -133,6 +148,11 @@ export default function App() {
               style={{ marginLeft: '0.5rem' }}
             />
           </label>
+          {lastSgfFile && (
+            <div style={{ fontSize: '0.9rem', color: '#444' }}>
+              Loaded: <strong>{lastSgfFile}</strong>
+            </div>
+          )}
         </div>
 
         {error && (
