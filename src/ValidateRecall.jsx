@@ -38,18 +38,13 @@ export default function ValidateRecall() {
         // Prefer using the processed result persisted by App to avoid re-processing the SGF
         const lastProcessedRaw = localStorage.getItem('lastProcessed')
         if (lastProcessedRaw) {
-          try {
             const parsed = JSON.parse(lastProcessedRaw)
             if (parsed && parsed.moveNumber === moveNumber && parsed.signMap) {
               setSgfBoard(parsed.signMap)
               setSgfMoves(m => [...m, { signMap: parsed.signMap, totalMoves: parsed.totalMoves }])
               validate(testMoves, parsed.signMap)
               setLoading(false)
-              return
             }
-          } catch (e) {
-            // fall through to reprocessing if parsing fails
-          }
         }
       } catch (err) {
         setError(err.message)
