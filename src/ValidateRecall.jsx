@@ -9,8 +9,8 @@ export default function ValidateRecall() {
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(true)
   const [validationMessage, setValidationMessage] = useState('')
-  const [sgfBoard, setSgfBoard] = useState(() => Array(19).fill().map(() => Array(19).fill(0)))
-  const [testBoard, setTestBoard] = useState(() => Array(19).fill().map(() => Array(19).fill(0)))
+  const [sgfBoard, setSgfBoard] = useState(() => Array(19).fill().map(() => Array(19).fill(null)))
+  const [testBoard, setTestBoard] = useState(() => Array(19).fill().map(() => Array(19).fill(null)))
 
   useEffect(() => {
     // Load test moves from localStorage
@@ -25,19 +25,25 @@ export default function ValidateRecall() {
       })
       setTestBoard(board)
     }
+  }, []) // Load test moves once on mount
 
-    // Load and process SGF
+  // Separate effect for loading SGF - runs when testMoves changes
+  useEffect(() => {
     async function loadSGF() {
       try {
-        const filePath = localStorage.getItem('lastSgfPath')
-        if (!filePath) {
+        const sgfContent = localStorage.getItem('lastSgfContent')
+        if (!sgfContent) {
           setError('No SGF file selected. Go back and load an SGF file first.')
           setLoading(false)
           return
         }
         
         const moveCount = testMoves.length
-        const { signMap, totalMoves } = await processGame(filePath, moveCount)
+        // Create a Blob from the stored content and wrap in a File object
+        const blob = new Blob([sgfContent], { type: 'application/x-go-sgf' })
+        const file = new File([blob], 'stored.sgf', { type: 'application/x-go-sgf' })
+        
+        const { signMap, totalMoves } = await processGame(file, moveCount)
         setSgfBoard(signMap)
         setSgfMoves(moves => [...moves, { signMap, totalMoves }])
         validate(testMoves, signMap)
@@ -48,7 +54,7 @@ export default function ValidateRecall() {
       }
     }
     loadSGF()
-  }, [])
+  }, [testMoves]) // Run when testMoves changes
 
   function validate(testMoves, sgfBoard) {
     let isValid = true

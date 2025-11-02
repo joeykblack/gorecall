@@ -43,8 +43,14 @@ export default function App() {
       const { signMap: newSignMap, totalMoves: total } = await processGame(file, moveNumber)
       setSignMap(newSignMap)
       setTotalMoves(total)
-      setLastSgfFile(file)
-      localStorage.setItem('lastSgfFile', file)
+      
+      // Read and store the SGF content
+      const reader = new FileReader()
+      reader.onload = (evt) => {
+        const content = evt.target.result
+        localStorage.setItem('lastSgfContent', content)
+      }
+      reader.readAsText(file)
     } catch (err) {
       setError(err.message)
       console.error(err)
