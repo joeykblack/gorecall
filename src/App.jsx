@@ -9,7 +9,10 @@ export default function App() {
     return Array.from({ length: size }, () => Array(size).fill(0))
   })
   
-  const [moveNumber, setMoveNumber] = useState(0)
+  const [moveNumber, setMoveNumber] = useState(() => {
+    const saved = localStorage.getItem('moveNumber')
+    return saved ? parseInt(saved, 10) : 0
+  })
   const [totalMoves, setTotalMoves] = useState(0)
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
@@ -37,6 +40,7 @@ export default function App() {
     const num = parseInt(evt.target.value, 10)
     if (isNaN(num) || num < 0) return
     setMoveNumber(num)
+    localStorage.setItem('moveNumber', num.toString())
     
     // If we have a file loaded (indicated by totalMoves > 0), update the position
     if (totalMoves > 0) {
