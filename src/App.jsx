@@ -38,6 +38,19 @@ export default function App() {
     return saved ? parseInt(saved, 10) : 0
   })
   
+  // Listen for moveNumber changes from other parts of the app (same window)
+  useEffect(() => {
+    const handler = (e) => {
+      const newNumber = Number(e?.detail)
+      if (!Number.isNaN(newNumber)) {
+        setMoveNumber(newNumber)
+      }
+    }
+
+    window.addEventListener('moveNumberChanged', handler)
+    return () => window.removeEventListener('moveNumberChanged', handler)
+  }, [])
+  
   // Keep track of last loaded SGF filename for display
   const [lastSgfFile, setLastSgfFile] = useState(() => {
     try {
@@ -130,6 +143,47 @@ export default function App() {
       }
     }
   }
+
+  // When moveNumber changes (for example from ValidateRecall), re-run the SGF processing
+  // so the board updates immediately. Prefer a chosen file input, otherwise use stored content.
+  useEffect(() => {
+    // Don't run on initial mount if there is no stored SGF
+    const sgfContent = localStorage.getItem('lastSgfContent')
+    const fileInput = document.querySelector('input[type="file"]')
+    const file = fileInput?.files?.[0]
+
+    if (!file && !sgfContent) return
+
+    let mounted = true
+    setLoading(true)
+
+    const run = async () => {
+      try {
+        if (file) {
+          const { signMap: newSignMap, totalMoves: total } = await processGame(file, moveNumber)
+          if (!mounted) return
+          setSignMap(newSignMap)
+          setTotalMoves(total)
+        } else {
+          const blob = new Blob([sgfContent], { type: 'application/x-go-sgf' })
+          const storedFile = new File([blob], 'stored.sgf', { type: 'application/x-go-sgf' })
+          const { signMap: newSignMap, totalMoves: total } = await processGame(storedFile, moveNumber)
+          if (!mounted) return
+          setSignMap(newSignMap)
+          setTotalMoves(total)
+        }
+      } catch (err) {
+        if (!mounted) return
+        setError(err.message)
+      } finally {
+        if (mounted) setLoading(false)
+      }
+    }
+
+    run()
+
+    return () => { mounted = false }
+  }, [moveNumber])
 
   return (
     <div className="app">

@@ -172,7 +172,12 @@ export default function ValidateRecall() {
           Restart
         </button>
         <button onClick={() => {
-          
+          const newNumber = (moveNumber || 0) + 1
+          setMoveNumber(newNumber)
+          localStorage.setItem('moveNumber', newNumber.toString())
+          // Notify the rest of the app in this window that the move number changed
+          window.dispatchEvent(new CustomEvent('moveNumberChanged', { detail: newNumber }))
+          // Go back to the main app view
           window.location.hash = null
         }}>
           Next Move
