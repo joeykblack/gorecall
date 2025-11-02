@@ -70,7 +70,7 @@ export default function App() {
 
   return (
     <div className="app">
-      <h1>GoRecall</h1>
+      <h1>Go Recall</h1>
       
       <div style={{ marginBottom: '1rem' }}>
         <div style={{ marginBottom: '0.5rem' }}>
@@ -112,16 +112,6 @@ export default function App() {
         )}
       </div>
 
-      <div style={{ marginBottom: '1rem' }}>
-        <button onClick={() => {
-          // Open a new page (same app) with the test recall route
-          const url = window.location.origin + window.location.pathname + '#/test'
-          window.open(url, '_blank')
-        }}>
-          Test Recall
-        </button>
-      </div>
-
         <Goban
           signMap={signMap.map(row => row.map(cell => cell?.sign || 0))}
           vertexSize={32}
@@ -133,6 +123,16 @@ export default function App() {
             )
           )}
         />
+
+      <div style={{ marginBottom: '1rem', marginTop: '1rem' }}>
+        <button onClick={() => {
+          // Open a new page (same app) with the test recall route
+          const url = window.location.origin + window.location.pathname + '#/test'
+          window.open(url, '_blank')
+        }}>
+          Test Recall
+        </button>
+      </div>
     </div>
   )
 }
