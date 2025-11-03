@@ -59,6 +59,8 @@ export default function App() {
   const [randomizeOrientation, setRandomizeOrientation] = useState(() => {
     try { return localStorage.getItem('randomizeOrientation') === '1' } catch (e) { return false }
   })
+
+  const [key, setKey] = useState(0);
   
   // Listen for moveNumber changes from other parts of the app (same window)
   useEffect(() => {
@@ -67,6 +69,7 @@ export default function App() {
       if (!Number.isNaN(newNumber)) {
         setMoveNumber(newNumber)
       }
+      setKey(prev => prev + 1)
     }
 
     window.addEventListener('moveNumberChanged', handler)
@@ -229,7 +232,7 @@ export default function App() {
     run()
 
     return () => { mounted = false }
-  }, [moveNumber, randomizeColor, startPos, randomizeOrientation])
+  }, [moveNumber, randomizeColor, startPos, randomizeOrientation, key])
 
   return (
     <div className="app">
