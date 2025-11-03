@@ -236,51 +236,6 @@ export default function App() {
       <h1 style={{ margin: '1rem 0', textAlign: 'center' }}>Go Recall</h1>
       
       <div className="app-content">
-        <div style={{ marginBottom: '0.5rem' }}>
-          <label style={{ marginRight: '0.5rem' }}>
-            Move number (0-{totalMoves || '?'}):
-            <input
-              type="number"
-              min="0"
-              max={totalMoves || 999}
-              value={moveNumber}
-              onChange={handleMoveNumberChange}
-              style={{ marginLeft: '0.5rem' }}
-            />
-          </label>
-        </div>
-
-        <div style={{ marginBottom: '0.5rem' }}>
-          <label style={{ marginRight: '0.5rem' }}>
-            Starting Position:
-            <select 
-              value={startPos}
-              onChange={(e) => {
-                const v = e.target.value
-                setStartPos(v)
-                localStorage.setItem('startPos', v)
-              }}
-              style={{ marginLeft: '0.5rem' }}
-            >
-              <option value="">Default</option>
-              <option value="qc">3,3</option>
-              <option value="qd">3,4</option>
-            </select>
-          </label>
-          <label style={{ marginLeft: '1rem' }}>
-            <input
-              type="checkbox"
-              checked={randomizeVariation}
-              onChange={(e) => {
-                const v = !!e.target.checked
-                setRandomizeVariation(v)
-                localStorage.setItem('randomizeVariation', v ? '1' : '0')
-              }}
-              style={{ marginRight: '0.5rem' }}
-            />
-            Randomize Variations
-          </label>
-        </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <label>
@@ -297,6 +252,64 @@ export default function App() {
               Loaded: <strong>{lastSgfFile}</strong>
             </div>
           )}
+        </div>
+
+        <div style={{ marginBottom: '0.5rem' }}>
+          <label style={{ marginRight: '0.5rem' }}>
+            Number of moves (0-{totalMoves || '?'}):
+            <input
+              type="number"
+              min="0"
+              max={totalMoves || 999}
+              value={moveNumber}
+              onChange={handleMoveNumberChange}
+              style={{ marginLeft: '0.5rem' }}
+            />
+          </label>
+        </div>
+
+        <div style={{ marginBottom: '0.5rem' }}>
+          <label style={{ marginRight: '0.5rem' }}>
+            Variations starting at:
+            <select 
+              value={startPos}
+              onChange={(e) => {
+                const v = e.target.value
+                setStartPos(v)
+                localStorage.setItem('startPos', v)
+              }}
+              style={{ marginLeft: '0.5rem' }}
+            >
+              <option value="">Default</option>
+
+              <option value="qc">3,3</option>
+              <option value="qd">3,4</option>
+              <option value="qe">3,5</option>
+              <option value="qf">3,6</option>
+
+              <option value="pd">4,4</option>
+              <option value="pe">4,5</option>
+              <option value="pf">4,6</option>
+
+              <option value="oe">5,5</option>
+            </select>
+          </label>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <label style={{ marginLeft: '1rem' }}>
+            <input
+              type="checkbox"
+              checked={randomizeVariation}
+              onChange={(e) => {
+                const v = !!e.target.checked
+                setRandomizeVariation(v)
+                localStorage.setItem('randomizeVariation', v ? '1' : '0')
+              }}
+              style={{ marginRight: '0.5rem' }}
+            />
+            Randomize Variations
+          </label>
           <label style={{ marginLeft: '1rem', display: 'flex', alignItems: 'center' }}>
             <input
               type="checkbox"
