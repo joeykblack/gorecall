@@ -16,6 +16,7 @@ export default defineConfig({
     }
   },
   build: {
+    outDir: './docs',
     // Turn off code-splitting so the plugin can inline everything into one file
     rollupOptions: {
       output: {
