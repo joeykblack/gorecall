@@ -14,3 +14,10 @@ Scripts:
 - `npm run dev` — start dev server
 - `npm run build` — build production files
 - `npm run preview` — locally preview the production build
+
+
+TODO
+- Validate that move numbers match
+- Random rotation/reflection 
+- Randomize path through sgf
+- Select desired first move (to filter random joseki)

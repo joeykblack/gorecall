@@ -66,7 +66,7 @@ export default function ValidateRecall() {
       const sgfCell = sgfBoard[move.y][move.x]
       const sgfSign = sgfCell?.sign || 0
 
-      if (sgfSign !== move.sign) {
+      if (sgfSign !== move.sign || move.moveNumber !== sgfCell.moveNumber) {
         return {
           moveNumber: move.moveNumber
         }
