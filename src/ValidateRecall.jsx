@@ -103,81 +103,83 @@ export default function ValidateRecall() {
 
   return (
     <div className="app">
-      <h2>Validate Recall</h2>
-      
-      <div style={{ 
-        display: 'flex', 
-        gap: '2rem',
-        flexWrap: 'wrap',
-        alignItems: 'flex-start'
-      }}>
+      <div className="app-content">
+        <h2>Validate Recall</h2>
+        
+        <div style={{ 
+            display: 'flex', 
+            gap: '2rem',
+            flexWrap: 'wrap',
+            alignItems: 'flex-start'
+        }}>
 
-        <div>
-          <h3>Your Moves</h3>
-          <Goban
-            signMap={testBoard.map(row => row.map(cell => cell?.sign || 0))}
-            markerMap={testBoard.map(row => 
-              row.map(cell => cell?.moveNumber ? 
-                ({ type: 'label', label: cell.moveNumber.toString() }) : 
-                null
-              )
-            )}
-            vertexSize={28}
-            showCoordinates={true}
-          />
-        </div>
-
-        <div>
-          <h3>SGF Moves</h3>
-          <Goban
-            signMap={sgfBoard.map(row => row.map(cell => cell?.sign || 0))}
-            markerMap={sgfBoard.map(row => 
+            <div>
+            <h3>Your Moves</h3>
+            <Goban
+                signMap={testBoard.map(row => row.map(cell => cell?.sign || 0))}
+                markerMap={testBoard.map(row => 
                 row.map(cell => cell?.moveNumber ? 
-                { type: 'label', label: cell.moveNumber.toString() } : 
-                null
+                    ({ type: 'label', label: cell.moveNumber.toString() }) : 
+                    null
                 )
-            )}
-            vertexSize={28}
-            showCoordinates={true}
-          />
+                )}
+                vertexSize={28}
+                showCoordinates={true}
+            />
+            </div>
+
+            <div>
+            <h3>SGF Moves</h3>
+            <Goban
+                signMap={sgfBoard.map(row => row.map(cell => cell?.sign || 0))}
+                markerMap={sgfBoard.map(row => 
+                    row.map(cell => cell?.moveNumber ? 
+                    { type: 'label', label: cell.moveNumber.toString() } : 
+                    null
+                    )
+                )}
+                vertexSize={28}
+                showCoordinates={true}
+            />
+            </div>
         </div>
-      </div>
 
-      <div style={{ 
-        marginTop: '1rem',
-        padding: '1rem',
-        backgroundColor: validationMessage.includes('match') ? '#e6ffe6' : '#ffe6e6',
-        borderRadius: '4px',
-        whiteSpace: 'pre-line'
-      }}>
-        <strong>Result:</strong>
-        <p>{validationMessage}</p>
-      </div>
+        <div style={{ 
+            marginTop: '1rem',
+            padding: '1rem',
+            backgroundColor: validationMessage.includes('match') ? '#e6ffe6' : '#ffe6e6',
+            borderRadius: '4px',
+            whiteSpace: 'pre-line'
+        }}>
+            <strong>Result:</strong>
+            <p>{validationMessage}</p>
+        </div>
 
-      <div style={{ 
-        marginTop: '1rem',
-        display: 'flex',
-        gap: '1rem',
-      }}>
-        <button onClick={() => history.back()}>
-          Try Again
-        </button>
-        <button onClick={() => {
-          window.location.hash = null
+        <div style={{ 
+            marginTop: '1rem',
+            display: 'flex',
+            gap: '1rem',
         }}>
-          Restart
-        </button>
-        <button onClick={() => {
-          const newNumber = (moveNumber || 0) + 1
-          setMoveNumber(newNumber)
-          localStorage.setItem('moveNumber', newNumber.toString())
-          // Notify the rest of the app in this window that the move number changed
-          window.dispatchEvent(new CustomEvent('moveNumberChanged', { detail: newNumber }))
-          // Go back to the main app view
-          window.location.hash = null
-        }}>
-          Next Move
-        </button>
+            <button onClick={() => history.back()}>
+            Try Again
+            </button>
+            <button onClick={() => {
+            window.location.hash = null
+            }}>
+            Restart
+            </button>
+            <button onClick={() => {
+            const newNumber = (moveNumber || 0) + 1
+            setMoveNumber(newNumber)
+            localStorage.setItem('moveNumber', newNumber.toString())
+            // Notify the rest of the app in this window that the move number changed
+            window.dispatchEvent(new CustomEvent('moveNumberChanged', { detail: newNumber }))
+            // Go back to the main app view
+            window.location.hash = null
+            }}>
+            Next Move
+            </button>
+        </div>
       </div>
     </div>
   )

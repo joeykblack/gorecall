@@ -65,37 +65,39 @@ export default function TestRecall() {
 
   return (
     <div className="app">
-      <h2>Test Recall</h2>
+      <div className="app-content">
+        <h2>Test Recall</h2>
 
-      <div style={{ marginBottom: '0.5rem' }}>
-        <label style={{ marginRight: '1rem' }}>
-          <input 
-            type="checkbox" 
-            onChange={startWithWhite}
-            checked={!nextPlayerIsBlack} // checked when starting with white
-          /> Start with white
-        </label>
-        <button onClick={undo} disabled={moves.length === 0}>Undo</button>
-      </div>
-
-
-        <div style={{ position: 'relative', display: 'inline-block' }}>
-          <Goban
-            signMap={board.map(row => row.map(cell => cell?.sign || 0))}
-            markerMap={board.map(row => row.map(cell => cell?.moveNumber ? ({ type: 'label', label: cell.moveNumber.toString() }) : null))}
-            vertexSize={32}
-            showCoordinates={true}
-            onVertexClick={handleVertexClick}
-          />
+        <div style={{ marginBottom: '0.5rem' }}>
+            <label style={{ marginRight: '1rem' }}>
+            <input 
+                type="checkbox" 
+                onChange={startWithWhite}
+                checked={!nextPlayerIsBlack} // checked when starting with white
+            /> White to move
+            </label>
+            <button onClick={undo} disabled={moves.length === 0}>Undo</button>
         </div>
 
-        <div style={{ marginTop: '1rem' }}>
-          <button onClick={() => {
-            localStorage.setItem('testMoves', JSON.stringify(moves))
-            window.location.hash = '#/validate'
-          }} disabled={moves.length === 0}>
-            Validate
-          </button>
+
+            <div style={{ position: 'relative', display: 'inline-block' }}>
+            <Goban
+                signMap={board.map(row => row.map(cell => cell?.sign || 0))}
+                markerMap={board.map(row => row.map(cell => cell?.moveNumber ? ({ type: 'label', label: cell.moveNumber.toString() }) : null))}
+                vertexSize={32}
+                showCoordinates={true}
+                onVertexClick={handleVertexClick}
+            />
+            </div>
+
+            <div style={{ marginTop: '1rem' }}>
+            <button onClick={() => {
+                localStorage.setItem('testMoves', JSON.stringify(moves))
+                window.location.hash = '#/validate'
+            }} disabled={moves.length === 0}>
+                Validate
+            </button>
+            </div>
         </div>
     </div>
   )
