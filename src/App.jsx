@@ -185,7 +185,7 @@ export default function App() {
     run()
 
     return () => { mounted = false }
-  }, [moveNumber, randomizeColor])
+  }, [moveNumber, randomizeColor, startPos])
 
   return (
     <div className="app">
@@ -215,12 +215,6 @@ export default function App() {
                 const v = e.target.value
                 setStartPos(v)
                 localStorage.setItem('startPos', v)
-                // If we have a file loaded, reprocess it with the new position
-                const fileInput = document.querySelector('input[type="file"]')
-                if (fileInput?.files?.[0]) {
-                  window.startPos = v
-                  handleFileSelect({ target: fileInput })
-                }
               }}
               style={{ marginLeft: '0.5rem' }}
             >

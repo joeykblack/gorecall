@@ -41,7 +41,7 @@ export async function parseFile(file) {
           }
         }
 
-        var startNode = game.nodes?.[0] || null
+        var startNode = game.children?.[0] || null
         // If at root node and we have a starting position preference
         if (game.children.length > 1 && window.startPos) {
             // Find child node matching the starting position
