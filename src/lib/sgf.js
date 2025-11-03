@@ -26,8 +26,17 @@ export async function parseFile(file) {
             if (node.data.W) moves.push(node.data.W[0])
           }
           
-          // Follow main variation (first child)
-          extractMoves(node.children[0])
+          // Select which variation to follow
+          if (node.children && node.children.length > 0) {
+            if (window.randomizeVariation && node.children.length > 1) {
+              // Randomly select a child
+              const randomIndex = Math.floor(Math.random() * node.children.length)
+              extractMoves(node.children[randomIndex])
+            } else {
+              // Follow main variation (first child)
+              extractMoves(node.children[0])
+            }
+          }
         }
 
         var startNode = game.children?.[0] || null

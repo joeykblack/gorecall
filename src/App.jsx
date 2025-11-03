@@ -47,6 +47,11 @@ export default function App() {
   const [startPos, setStartPos] = useState(() => {
     try { return localStorage.getItem('startPos') || '' } catch (e) { return '' }
   })
+
+  // When checked, randomly select variations instead of always taking the first one
+  const [randomizeVariation, setRandomizeVariation] = useState(() => {
+    try { return localStorage.getItem('randomizeVariation') === '1' } catch (e) { return false }
+  })
   
   // Listen for moveNumber changes from other parts of the app (same window)
   useEffect(() => {
@@ -84,6 +89,7 @@ export default function App() {
     
     // Set global state for SGF parser to use when selecting variant
     window.startPos = startPos
+    window.randomizeVariation = randomizeVariation
     
     try {
       const startPlayer = randomizeColor ? (Math.random() < 0.5 ? 1 : -1) : 1
@@ -147,6 +153,7 @@ export default function App() {
 
     // Update global state for SGF parser
     window.startPos = startPos
+    window.randomizeVariation = randomizeVariation
 
     if (!file && !sgfContent) return
 
@@ -222,6 +229,19 @@ export default function App() {
               <option value="qc">3,3</option>
               <option value="qd">3,4</option>
             </select>
+          </label>
+          <label style={{ marginLeft: '1rem' }}>
+            <input
+              type="checkbox"
+              checked={randomizeVariation}
+              onChange={(e) => {
+                const v = !!e.target.checked
+                setRandomizeVariation(v)
+                localStorage.setItem('randomizeVariation', v ? '1' : '0')
+              }}
+              style={{ marginRight: '0.5rem' }}
+            />
+            Randomize Variations
           </label>
         </div>
 
