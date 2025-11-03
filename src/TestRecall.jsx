@@ -69,13 +69,6 @@ export default function TestRecall() {
         <h2>Test Recall</h2>
 
         <div style={{ marginBottom: '0.5rem' }}>
-            <label style={{ marginRight: '1rem' }}>
-            <input 
-                type="checkbox" 
-                onChange={startWithWhite}
-                checked={!nextPlayerIsBlack} // checked when starting with white
-            /> White to move
-            </label>
             <button onClick={undo} disabled={moves.length === 0}>Undo</button>
         </div>
 
