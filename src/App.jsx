@@ -310,17 +310,6 @@ export default function App() {
             Error: {error}
           </div>
         )}
-
-        {comments.length > 0 && (
-          <div style={{ marginTop: '0.5rem', padding: '0.5rem', backgroundColor: '#f5f5f5', borderRadius: '4px' }}>
-            <strong>Comments:</strong>
-            <ul style={{ margin: '0.5rem 0', paddingLeft: '1.5rem' }}>
-              {comments.map((comment, i) => (
-                <li key={i}>{comment}</li>
-              ))}
-            </ul>
-          </div>
-        )}
         
         {loading && (
           <div style={{ marginTop: '0.5rem' }}>
@@ -349,6 +338,30 @@ export default function App() {
           Test Recall
         </button>
       </div>
+
+
+
+        {comments.length > 0 && (
+          <div style={{ marginTop: '0.5rem', padding: '0.5rem', backgroundColor: '#f5f5f5', borderRadius: '4px' }}>
+            <strong>Comments:</strong>
+            <ol style={{ margin: '0.5rem 0', paddingLeft: '1.5rem' }}>
+              {comments.map((comment, i) => (
+                <li key={i}>
+                  <pre style={{ 
+                    margin: '0.25rem 0',
+                    whiteSpace: 'pre-wrap',
+                    wordWrap: 'break-word',
+                    fontFamily: 'inherit',
+                    fontSize: 'inherit'
+                  }}>
+                    {comment}
+                  </pre>
+                </li>
+              ))}
+            </ol>
+          </div>
+        )}
+
     </div>
   )
 }
