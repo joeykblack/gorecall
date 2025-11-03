@@ -22,10 +22,14 @@ export default function ValidateRecall() {
     if (savedTestMoves) {
       const moves = JSON.parse(savedTestMoves)
       setTestMoves(moves)
-      // Reconstruct test board from moves
+      // Reconstruct test board from moves. Skip pass moves (no x/y).
       const board = Array(19).fill().map(() => Array(19).fill(0))
       moves.forEach(move => {
-        board[move.y][move.x] = { sign: move.sign, moveNumber: move.moveNumber }
+        // Only place stones for moves with valid coordinates
+        if (Number.isInteger(move.x) && Number.isInteger(move.y) && move.x >= 0 && move.x < 19 && move.y >= 0 && move.y < 19) {
+          board[move.y][move.x] = { sign: move.sign, moveNumber: move.moveNumber }
+        }
+        // If move.x/move.y are missing, it's a pass — nothing to draw on the board
       })
       setTestBoard(board)
     }
@@ -63,13 +67,35 @@ export default function ValidateRecall() {
 
     // Compare each test move with the corresponding position in the SGF board
     const mismatches = testMoves.map(move => {
+      // Handle pass moves (no x/y): validate that no SGF cell has that moveNumber
+      if (!Number.isInteger(move.x) || !Number.isInteger(move.y)) {
+        // Search SGF board for a cell with this moveNumber
+        let found = false
+        for (let r = 0; r < sgfBoard.length && !found; r++) {
+          for (let c = 0; c < sgfBoard[r].length; c++) {
+            const cell = sgfBoard[r][c]
+            if (cell && cell.moveNumber === move.moveNumber) {
+              found = true
+              break
+            }
+          }
+        }
+        if (found) {
+          return { moveNumber: move.moveNumber }
+        }
+        return null
+      }
+
+      // Normal move with coordinates
+      if (move.y < 0 || move.y >= sgfBoard.length || move.x < 0 || move.x >= sgfBoard[0].length) {
+        return { moveNumber: move.moveNumber }
+      }
+
       const sgfCell = sgfBoard[move.y][move.x]
       const sgfSign = sgfCell?.sign || 0
 
-      if (sgfSign !== move.sign || move.moveNumber !== sgfCell.moveNumber) {
-        return {
-          moveNumber: move.moveNumber
-        }
+      if (sgfSign !== move.sign || move.moveNumber !== sgfCell?.moveNumber) {
+        return { moveNumber: move.moveNumber }
       }
       return null
     }).filter(Boolean) // Remove nulls for matching moves

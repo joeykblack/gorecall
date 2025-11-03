@@ -44,6 +44,11 @@ export default function TestRecall() {
     placeStone(x, y)
   }, [placeStone])
 
+  const pass = useCallback(() => {
+    setMoves(prev => [...prev, { x: null, y: null, sign: nextPlayerIsBlack ? 1 : -1, moveNumber: moves.length + 1 }])
+    setNextPlayerIsBlack(prev => !prev)
+  }, [nextPlayerIsBlack])
+
   const undo = useCallback(() => {
     if (moves.length === 0) return
     const last = moves[moves.length - 1]
@@ -70,6 +75,7 @@ export default function TestRecall() {
 
         <div style={{ marginBottom: '0.5rem' }}>
             <button onClick={undo} disabled={moves.length === 0}>Undo</button>
+            <button onClick={pass}>Pass/Tenuki</button>
         </div>
 
 
