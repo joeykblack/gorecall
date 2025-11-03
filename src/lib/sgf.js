@@ -27,18 +27,7 @@ export async function parseFile(file) {
           }
           
           // Follow main variation (first child)
-          if (node.children && node.children.length > 0) {
-            // If at root node and we have a starting position preference
-            if (node === game && game.children.length > 1 && window.startPos) {
-              // Find child node matching the starting position
-              const matchingChild = game.children.find(child => 
-                child.data?.B?.[0] === window.startPos
-              )
-              extractMoves(matchingChild || game.children[0])
-            } else {
-              extractMoves(node.children[0])
-            }
-          }
+          extractMoves(node.children[0])
         }
 
         var startNode = game.children?.[0] || null
