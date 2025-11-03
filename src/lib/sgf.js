@@ -24,16 +24,35 @@ export async function parseFile(file) {
           if (node.data) {
             if (node.data.B) moves.push(node.data.B[0])
             if (node.data.W) moves.push(node.data.W[0])
-        }
+          }
           
           // Follow main variation (first child)
           if (node.children && node.children.length > 0) {
-            extractMoves(node.children[0])
+            // If at root node and we have a starting position preference
+            if (node === game && game.children.length > 1 && window.startPos) {
+              // Find child node matching the starting position
+              const matchingChild = game.children.find(child => 
+                child.data?.B?.[0] === window.startPos
+              )
+              extractMoves(matchingChild || game.children[0])
+            } else {
+              extractMoves(node.children[0])
+            }
           }
+        }
+
+        var startNode = game.nodes?.[0] || null
+        // If at root node and we have a starting position preference
+        if (game.children.length > 1 && window.startPos) {
+            // Find child node matching the starting position
+            const matchingChild = game.children.find(child => 
+            child.data?.B?.[0] === window.startPos
+            )
+            startNode = matchingChild || game.children[0]
         }
         
         // Start extracting from the game root
-        extractMoves(game)
+        extractMoves(startNode)
         
         // Get game info from root node if available
         const rootNode = game.nodes?.[0] || {}

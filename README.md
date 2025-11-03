@@ -17,7 +17,6 @@ Scripts:
 
 
 TODO
-- Validate that move numbers match
+- Select desired first move (to filter random joseki)
 - Random rotation/reflection 
 - Randomize path through sgf
-- Select desired first move (to filter random joseki)

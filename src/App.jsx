@@ -43,6 +43,11 @@ export default function App() {
     try { return localStorage.getItem('randomizeColor') === '1' } catch (e) { return false }
   })
   
+  // Position selector for choosing starting position variant (qc=3,3 or qd=3,4)
+  const [startPos, setStartPos] = useState(() => {
+    try { return localStorage.getItem('startPos') || '' } catch (e) { return '' }
+  })
+  
   // Listen for moveNumber changes from other parts of the app (same window)
   useEffect(() => {
     const handler = (e) => {
@@ -76,6 +81,9 @@ export default function App() {
     
     setLoading(true)
     setError(null)
+    
+    // Set global state for SGF parser to use when selecting variant
+    window.startPos = startPos
     
     try {
       const startPlayer = randomizeColor ? (Math.random() < 0.5 ? 1 : -1) : 1
@@ -137,6 +145,9 @@ export default function App() {
     const fileInput = document.querySelector('input[type="file"]')
     const file = fileInput?.files?.[0]
 
+    // Update global state for SGF parser
+    window.startPos = startPos
+
     if (!file && !sgfContent) return
 
     let mounted = true
@@ -192,6 +203,31 @@ export default function App() {
               onChange={handleMoveNumberChange}
               style={{ marginLeft: '0.5rem' }}
             />
+          </label>
+        </div>
+
+        <div style={{ marginBottom: '0.5rem' }}>
+          <label style={{ marginRight: '0.5rem' }}>
+            Starting Position:
+            <select 
+              value={startPos}
+              onChange={(e) => {
+                const v = e.target.value
+                setStartPos(v)
+                localStorage.setItem('startPos', v)
+                // If we have a file loaded, reprocess it with the new position
+                const fileInput = document.querySelector('input[type="file"]')
+                if (fileInput?.files?.[0]) {
+                  window.startPos = v
+                  handleFileSelect({ target: fileInput })
+                }
+              }}
+              style={{ marginLeft: '0.5rem' }}
+            >
+              <option value="">Default</option>
+              <option value="qc">3,3</option>
+              <option value="qd">3,4</option>
+            </select>
           </label>
         </div>
 
