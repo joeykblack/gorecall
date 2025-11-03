@@ -46,8 +46,8 @@ export async function processGame(file, moveNumber, startPlayer = 1) {
       const pos = sgfToPos(move)
       if (pos) {
         signMap = applyMove(signMap, pos, player, index + 1) // Pass move number (1-based)
-        player = -player // Switch players
-      }
+      } // else pass
+      player = -player // Switch players
     })
 
     return {

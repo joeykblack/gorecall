@@ -32,7 +32,7 @@ export async function parseFile(file) {
             if (node.data.C) {
               comments.push(node.data.C[0])
             } else {
-                comments.push("")
+                comments.push(" ")
             }
           }
           

@@ -226,9 +226,9 @@ export default function App() {
 
   return (
     <div className="app">
-      <h1>Go Recall</h1>
+      <h1 style={{ margin: '1rem 0', textAlign: 'center' }}>Go Recall</h1>
       
-      <div style={{ marginBottom: '1rem' }}>
+      <div className="app-content">
         <div style={{ marginBottom: '0.5rem' }}>
           <label style={{ marginRight: '0.5rem' }}>
             Move number (0-{totalMoves || '?'}):
@@ -316,8 +316,6 @@ export default function App() {
             Loading...
           </div>
         )}
-      </div>
-
         <Goban
           signMap={signMap.map(row => row.map(cell => cell?.sign || 0))}
           vertexSize={32}
@@ -328,21 +326,27 @@ export default function App() {
               null
             )
           )}
+          style={{ margin: '1rem 0' }}
         />
 
-      <div style={{ marginBottom: '1rem', marginTop: '1rem' }}>
-        <button onClick={() => {
-          // Navigate to test recall route in same tab
-          window.location.hash = '#/test'
-        }}>
-          Test Recall
-        </button>
-      </div>
-
-
+        <div style={{ marginBottom: '1rem' }}>
+          <button onClick={() => {
+            // Navigate to test recall route in same tab
+            window.location.hash = '#/test'
+          }}>
+            Test Recall
+          </button>
+        </div>
 
         {comments.length > 0 && (
-          <div style={{ marginTop: '0.5rem', padding: '0.5rem', backgroundColor: '#f5f5f5', borderRadius: '4px' }}>
+          <div style={{ 
+            width: '100%',
+            maxWidth: '800px',
+            marginBottom: '1rem',
+            padding: '0.5rem',
+            backgroundColor: '#f5f5f5',
+            borderRadius: '4px'
+          }}>
             <strong>Comments:</strong>
             <ol style={{ margin: '0.5rem 0', paddingLeft: '1.5rem' }}>
               {comments.map((comment, i) => (
@@ -361,7 +365,7 @@ export default function App() {
             </ol>
           </div>
         )}
-
+      </div>
     </div>
   )
 }
