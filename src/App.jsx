@@ -287,12 +287,12 @@ export default function App() {
 
               <option value="qc">3,3</option>
               <option value="qd">3,4</option>
-              <option value="qe">3,5</option>
-              <option value="qf">3,6</option>
+              <option value="oc">5,3</option>
+              <option value="nc">6,3</option>
 
               <option value="pd">4,4</option>
-              <option value="pe">4,5</option>
-              <option value="pf">4,6</option>
+              <option value="od">5,4</option>
+              <option value="nd">6,4</option>
 
               <option value="oe">5,5</option>
             </select>
