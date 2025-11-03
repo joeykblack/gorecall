@@ -283,7 +283,7 @@ export default function App() {
               }}
               style={{ marginLeft: '0.5rem' }}
             >
-              <option value="">Default</option>
+              <option value="">Any</option>
 
               <option value="qc">3,3</option>
               <option value="qd">3,4</option>

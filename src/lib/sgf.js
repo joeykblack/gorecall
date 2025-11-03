@@ -57,6 +57,9 @@ export async function parseFile(file) {
             child.data?.B?.[0] === window.startPos
             )
             startNode = matchingChild || game.children[0]
+        } else if (game.children.length > 1 && window.randomizeVariation) {
+              const randomIndex = Math.floor(Math.random() * game.children.length)
+              startNode = game.children[randomIndex]
         }
         
         // Start extracting from the game root

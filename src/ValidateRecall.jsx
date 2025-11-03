@@ -209,7 +209,7 @@ export default function ValidateRecall() {
                       // Go back to the main app view
                       window.location.hash = null
                   }}>
-                      Next Move
+                      Next +1 Move
                   </button>
         </div>
       </div>
