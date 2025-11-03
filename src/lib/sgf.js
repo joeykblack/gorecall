@@ -13,8 +13,9 @@ export async function parseFile(file) {
           throw new Error('No game found in SGF')
         }
 
-        // Extract moves by traversing the game tree
+        // Extract moves and comments by traversing the game tree
         const moves = []
+        const comments = []
         
         // Function to extract moves recursively, following the main variation
         function extractMoves(node) {
@@ -22,8 +23,17 @@ export async function parseFile(file) {
           
           // Process all nodes in current sequence
           if (node.data) {
-            if (node.data.B) moves.push(node.data.B[0])
-            if (node.data.W) moves.push(node.data.W[0])
+            if (node.data.B) {
+              moves.push(node.data.B[0])
+            }
+            if (node.data.W) {
+              moves.push(node.data.W[0])
+            }
+            if (node.data.C) {
+              comments.push(node.data.C[0])
+            } else {
+                comments.push("")
+            }
           }
           
           // Select which variation to follow
@@ -56,6 +66,7 @@ export async function parseFile(file) {
         const rootNode = game.nodes?.[0] || {}
         resolve({ 
           moves,
+          comments,
           info: {
             playerBlack: rootNode.PB?.[0] || null,
             playerWhite: rootNode.PW?.[0] || null,

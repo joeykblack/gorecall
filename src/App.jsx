@@ -33,6 +33,8 @@ export default function App() {
     return Array.from({ length: size }, () => Array(size).fill(0))
   })
   
+  const [comments, setComments] = useState([])
+  
   const [moveNumber, setMoveNumber] = useState(() => {
     const saved = localStorage.getItem('moveNumber')
     return saved ? parseInt(saved, 10) : 0
@@ -93,11 +95,20 @@ export default function App() {
     
     try {
       const startPlayer = randomizeColor ? (Math.random() < 0.5 ? 1 : -1) : 1
-      const { signMap: newSignMap, totalMoves: total } = await processGame(file, moveNumber, startPlayer)
+      const { signMap: newSignMap, totalMoves: total, comments: moveComments } = await processGame(file, moveNumber, startPlayer)
       setSignMap(newSignMap)
       setTotalMoves(total)
+      setComments(moveComments || [])
       // Persist processed result for reuse (include startPlayer)
-      try { localStorage.setItem('lastProcessed', JSON.stringify({ moveNumber, signMap: newSignMap, totalMoves: total, startPlayer })) } catch (e) {}
+      try { 
+        localStorage.setItem('lastProcessed', JSON.stringify({ 
+          moveNumber, 
+          signMap: newSignMap, 
+          totalMoves: total, 
+          startPlayer,
+          comments: moveComments 
+        })) 
+      } catch (e) {}
 
       // Persist filename
       setLastSgfFile(file.name)
@@ -132,8 +143,9 @@ export default function App() {
         setLoading(true)
         try {
           const startPlayer = randomizeColor ? (Math.random() < 0.5 ? 1 : -1) : 1
-          const { signMap: newSignMap } = await processGame(file, num, startPlayer)
+          const { signMap: newSignMap, comments: moveComments } = await processGame(file, num, startPlayer)
           setSignMap(newSignMap)
+          setComments(moveComments || [])
         } catch (err) {
           setError(err.message)
         } finally {
@@ -164,22 +176,40 @@ export default function App() {
       try {
         if (file) {
           const startPlayer = randomizeColor ? (Math.random() < 0.5 ? 1 : -1) : 1
-          const { signMap: newSignMap, totalMoves: total } = await processGame(file, moveNumber, startPlayer)
+          const { signMap: newSignMap, totalMoves: total, comments: moveComments } = await processGame(file, moveNumber, startPlayer)
           if (!mounted) return
           setSignMap(newSignMap)
           setTotalMoves(total)
+          setComments(moveComments || [])
           // Persist processed result for reuse
-          try { localStorage.setItem('lastProcessed', JSON.stringify({ moveNumber, signMap: newSignMap, totalMoves: total, startPlayer })) } catch (e) {}
+          try { 
+            localStorage.setItem('lastProcessed', JSON.stringify({ 
+              moveNumber, 
+              signMap: newSignMap, 
+              totalMoves: total, 
+              startPlayer,
+              comments: moveComments 
+            })) 
+          } catch (e) {}
         } else {
           const blob = new Blob([sgfContent], { type: 'application/x-go-sgf' })
           const storedFile = new File([blob], 'stored.sgf', { type: 'application/x-go-sgf' })
           const startPlayer = randomizeColor ? (Math.random() < 0.5 ? 1 : -1) : 1
-          const { signMap: newSignMap, totalMoves: total } = await processGame(storedFile, moveNumber, startPlayer)
+          const { signMap: newSignMap, totalMoves: total, comments: moveComments } = await processGame(storedFile, moveNumber, startPlayer)
           if (!mounted) return
           setSignMap(newSignMap)
           setTotalMoves(total)
+          setComments(moveComments || [])
           // Persist processed result for reuse
-          try { localStorage.setItem('lastProcessed', JSON.stringify({ moveNumber, signMap: newSignMap, totalMoves: total, startPlayer })) } catch (e) {}
+          try { 
+            localStorage.setItem('lastProcessed', JSON.stringify({ 
+              moveNumber, 
+              signMap: newSignMap, 
+              totalMoves: total, 
+              startPlayer,
+              comments: moveComments 
+            })) 
+          } catch (e) {}
         }
       } catch (err) {
         if (!mounted) return
@@ -278,6 +308,17 @@ export default function App() {
         {error && (
           <div style={{ color: 'red', marginTop: '0.5rem' }}>
             Error: {error}
+          </div>
+        )}
+
+        {comments.length > 0 && (
+          <div style={{ marginTop: '0.5rem', padding: '0.5rem', backgroundColor: '#f5f5f5', borderRadius: '4px' }}>
+            <strong>Comments:</strong>
+            <ul style={{ margin: '0.5rem 0', paddingLeft: '1.5rem' }}>
+              {comments.map((comment, i) => (
+                <li key={i}>{comment}</li>
+              ))}
+            </ul>
           </div>
         )}
         

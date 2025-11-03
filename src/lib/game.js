@@ -53,6 +53,7 @@ export async function processGame(file, moveNumber, startPlayer = 1) {
     return {
       signMap,
       totalMoves: sgf.moves.length,
+      comments: sgf.comments || []
     }
   } catch (err) {
     console.error('Error processing SGF:', err)
