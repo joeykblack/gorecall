@@ -50,8 +50,32 @@ export async function processGame(file, moveNumber, startPlayer = 1) {
       player = -player // Switch players
     })
 
+    // Randomly transform the board if randomizeOrientation is set
+    let finalSignMap = signMap
+    if (window.randomizeOrientation) {
+      // Randomly choose number of 90-degree rotations (0-3)
+      const rotations = Math.floor(Math.random() * 4)
+      
+      // Randomly decide whether to transpose
+      const shouldTranspose = Math.random() < 0.5
+      
+      // Apply rotations
+      for (let i = 0; i < rotations; i++) {
+        finalSignMap = finalSignMap.map((row, i) => 
+          row.map((_, j) => finalSignMap[finalSignMap.length - 1 - j][i])
+        )
+      }
+      
+      // Apply transposition if selected
+      if (shouldTranspose) {
+        finalSignMap = finalSignMap.map((row, i) => 
+          row.map((_, j) => finalSignMap[j][i])
+        )
+      }
+    }
+    
     return {
-      signMap,
+      signMap: finalSignMap,
       totalMoves: sgf.moves.length,
       comments: sgf.comments || []
     }

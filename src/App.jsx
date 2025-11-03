@@ -55,6 +55,11 @@ export default function App() {
     try { return localStorage.getItem('randomizeVariation') === '1' } catch (e) { return false }
   })
   
+  // When checked, randomly rotate and possibly transpose the board
+  const [randomizeOrientation, setRandomizeOrientation] = useState(() => {
+    try { return localStorage.getItem('randomizeOrientation') === '1' } catch (e) { return false }
+  })
+  
   // Listen for moveNumber changes from other parts of the app (same window)
   useEffect(() => {
     const handler = (e) => {
@@ -92,6 +97,7 @@ export default function App() {
     // Set global state for SGF parser to use when selecting variant
     window.startPos = startPos
     window.randomizeVariation = randomizeVariation
+    window.randomizeOrientation = randomizeOrientation
     
     try {
       const startPlayer = randomizeColor ? (Math.random() < 0.5 ? 1 : -1) : 1
@@ -166,6 +172,7 @@ export default function App() {
     // Update global state for SGF parser
     window.startPos = startPos
     window.randomizeVariation = randomizeVariation
+    window.randomizeOrientation = randomizeOrientation
 
     if (!file && !sgfContent) return
 
@@ -222,7 +229,7 @@ export default function App() {
     run()
 
     return () => { mounted = false }
-  }, [moveNumber, randomizeColor, startPos])
+  }, [moveNumber, randomizeColor, startPos, randomizeOrientation])
 
   return (
     <div className="app">
@@ -302,6 +309,19 @@ export default function App() {
               style={{ marginRight: '0.5rem' }}
             />
             Randomize Color
+          </label>
+          <label style={{ marginLeft: '1rem', display: 'flex', alignItems: 'center' }}>
+            <input
+              type="checkbox"
+              checked={randomizeOrientation}
+              onChange={(e) => {
+                const v = !!e.target.checked
+                setRandomizeOrientation(v)
+                try { localStorage.setItem('randomizeOrientation', v ? '1' : '0') } catch (e) {}
+              }}
+              style={{ marginRight: '0.5rem' }}
+            />
+            Randomize Orientation
           </label>
         </div>
 
