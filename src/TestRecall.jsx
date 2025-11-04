@@ -1,5 +1,5 @@
 import { Component } from 'preact'
-import { useState, useCallback, useEffect } from 'preact/hooks'
+import { useState, useCallback, useEffect, useRef } from 'preact/hooks'
 import '@sabaki/shudan/css/goban.css'
 import { Goban } from '@sabaki/shudan'
 
@@ -68,6 +68,32 @@ export default function TestRecall() {
     setNextPlayerIsBlack(!startWhite)
   }, [])
 
+  // Responsive sizing for the Goban
+  const boardContainerRef = useRef(null)
+  const [computedVertexSize, setComputedVertexSize] = useState(32)
+
+  useEffect(() => {
+    const maxVertex = 32
+    const minVertex = 12
+    const boardPadding = 16
+
+    function recompute() {
+      const container = boardContainerRef.current
+      const availableWidth = container ? container.clientWidth : window.innerWidth
+      const tentative = Math.floor((availableWidth - 2 * boardPadding) / (Math.max(1, size + 1)))
+      const vertex = Math.max(minVertex, Math.min(maxVertex, tentative || minVertex))
+      setComputedVertexSize(vertex)
+    }
+
+    recompute()
+    window.addEventListener('resize', recompute)
+    window.addEventListener('orientationchange', recompute)
+    return () => {
+      window.removeEventListener('resize', recompute)
+      window.removeEventListener('orientationchange', recompute)
+    }
+  }, [size])
+
   return (
     <div className="app">
       <div className="app-content">
@@ -79,15 +105,16 @@ export default function TestRecall() {
         </div>
 
 
-            <div style={{ position: 'relative', display: 'inline-block' }}>
-            <Goban
-                signMap={board.map(row => row.map(cell => cell?.sign || 0))}
-                markerMap={board.map(row => row.map(cell => cell?.moveNumber ? ({ type: 'label', label: cell.moveNumber.toString() }) : null))}
-                vertexSize={32}
-                showCoordinates={true}
-                onVertexClick={handleVertexClick}
-            />
-            </div>
+      <div ref={boardContainerRef}>
+      <Goban
+        signMap={board.map(row => row.map(cell => cell?.sign || 0))}
+        markerMap={board.map(row => row.map(cell => cell?.moveNumber ? ({ type: 'label', label: cell.moveNumber.toString() }) : null))}
+        vertexSize={computedVertexSize}
+        showCoordinates={true}
+        onVertexClick={handleVertexClick}
+        style={{  margin: '0.5rem 0' }}
+      />
+      </div>
 
             <div style={{ marginTop: '1rem' }}>
             <button onClick={() => {
