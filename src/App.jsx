@@ -282,6 +282,7 @@ export default function App() {
                 <summary>About this app</summary>
                 <p>This is an app for practicing visualization and recall of a Go position.</p>
                 <p>It was inspired by <a href="https://www.youtube.com/watch?v=gfve7yYCS08">The Power of Visualization: How to See Moves Before They're Played | Jonas Welticke 6d</a></p>
+                <p>I do not know how valuable this method of study is or if this app implements it well. You are probably better off doing tsumego.</p>
                 <p>There are 2 main ways to use this app:</p>
                 <ol>
                     <li>Practice with variations

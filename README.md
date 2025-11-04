@@ -1,16 +1,26 @@
 # GoRecall
 
-This is a minimal Vite + React (JavaScript) starter scaffold for the GoRecall project.
+https://joeykblack.github.io/gorecall/
+
+This app displays a sequence from an SGF file and tests the uers on their ability to recall it.
+
+I do not know how valuable this method of study is or if this app implements it well. You are probably better off doing tsumego.
+
+TODO
+- Fix result when sequence is shorter than selected number.
+- Cleanup UI
+- Joseki file with only good variations or a way to filter out bad variations 
+
+Frameworks: Vite + PReact (JavaScript)
 
 Quick start:
 
 ```bash
-cd /home/joey/Workspaces/GoRecall
 npm install
 npm run dev
 ```
 
 Scripts:
 - `npm run dev` — start dev server
-- `npm run build` — build production files
+- `npm run build` — build production file (single index.html in the docs folder for github.io)
 - `npm run preview` — locally preview the production build
