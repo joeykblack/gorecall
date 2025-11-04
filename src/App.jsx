@@ -234,6 +234,37 @@ export default function App() {
     return () => { mounted = false }
   }, [moveNumber, randomizeColor, startPos, randomizeOrientation, key])
 
+  // Responsive Goban sizing: measure available width and pick a vertexSize so the
+  // full board fits comfortably on small screens. Default max vertex size is 32
+  // (existing), with a sensible minimum for tiny screens.
+  const boardContainerRef = useRef(null)
+  const [computedVertexSize, setComputedVertexSize] = useState(32)
+
+  useEffect(() => {
+    const size = signMap.length || 19
+    const maxVertex = 32
+    const minVertex = 12
+    const boardPadding = 16 // px padding inside the container
+
+    function recompute() {
+      const container = boardContainerRef.current
+      const availableWidth = container ? container.clientWidth : window.innerWidth
+      // The board width (approx) is vertexSize * (size - 1) + 2 * boardPadding
+      // Solve for vertexSize and clamp
+      const tentative = Math.floor((availableWidth - 2 * boardPadding) / (Math.max(1, size + 1)))
+      const vertex = Math.max(minVertex, Math.min(maxVertex, tentative))
+      setComputedVertexSize(vertex)
+    }
+
+    recompute()
+    window.addEventListener('resize', recompute)
+    window.addEventListener('orientationchange', recompute)
+    return () => {
+      window.removeEventListener('resize', recompute)
+      window.removeEventListener('orientationchange', recompute)
+    }
+  }, [signMap])
+
   return (
     <div className="app">
       <h1 style={{ margin: '1rem 0', textAlign: 'center' }}>Go Recall</h1>
@@ -392,18 +423,20 @@ export default function App() {
             Loading...
           </div>
         )}
-        <Goban
-          signMap={signMap.map(row => row.map(cell => cell?.sign || 0))}
-          vertexSize={32}
-          showCoordinates={true}
-          markerMap={signMap.map(row => 
-            row.map(cell => cell?.moveNumber ? 
-              { type: 'label', label: cell.moveNumber.toString() } : 
-              null
-            )
-          )}
-          style={{ margin: '1rem 0' }}
-        />
+        <div ref={boardContainerRef}>
+          <Goban
+            signMap={signMap.map(row => row.map(cell => cell?.sign || 0))}
+            vertexSize={computedVertexSize}
+            showCoordinates={true}
+            markerMap={signMap.map(row => 
+              row.map(cell => cell?.moveNumber ? 
+                { type: 'label', label: cell.moveNumber.toString() } : 
+                null
+              )
+            )}
+            style={{ margin: '1rem 0'}}
+          />
+        </div>
 
         <div style={{ marginBottom: '1rem' }}>
           <button onClick={() => {
