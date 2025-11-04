@@ -309,6 +309,10 @@ export default function App() {
                         </ol>
                     </li>
                 </ol>
+                More SGF files:
+                <ul>
+                    <li><a href="https://xmp.net/arno/fuseki.html">Arno's fuseki database</a></li>
+                </ul>
             </details>
         </div>
 
