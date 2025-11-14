@@ -7,6 +7,7 @@ This app displays a sequence from an SGF file and tests the uers on their abilit
 I do not know how valuable this method of study is or if this app implements it well. You are probably better off doing tsumego.
 
 TODO
+- install as app on phone
 - Fix result when sequence is shorter than selected number.
 - Cleanup UI
 - Joseki file with only good variations or a way to filter out bad variations 

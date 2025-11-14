@@ -81,7 +81,7 @@ export default function ValidateRecall() {
             if (parsed && parsed.moveNumber === moveNumber && parsed.signMap) {
               setSgfBoard(parsed.signMap)
               setSgfMoves(m => [...m, { signMap: parsed.signMap, totalMoves: parsed.totalMoves }])
-              validate(testMoves, parsed.signMap)
+              validate(testMoves, parsed.signMap, parsed.totalMoves)
               setLoading(false)
             }
         }
@@ -94,7 +94,7 @@ export default function ValidateRecall() {
     loadSGF()
   }, [testMoves]) // Run when testMoves changes
 
-  function validate(testMoves, sgfBoard) {
+  function validate(testMoves, sgfBoard, totalSgfMoves) {
     if (testMoves.length === 0) {
       setValidationMessage('No moves to validate')
       return
@@ -135,7 +135,7 @@ export default function ValidateRecall() {
       return null
     }).filter(Boolean) // Remove nulls for matching moves
 
-    if (mismatches.length === 0 && moveNumber === testMoves.length) {
+    if (mismatches.length === 0 && totalSgfMoves === testMoves.length) {
       setValidationMessage('All moves match! 🎉')
     } else {
       const mismatchList = mismatches
@@ -143,8 +143,8 @@ export default function ValidateRecall() {
         .join('\n')
       setValidationMessage(`Found ${mismatches.length} incorrect moves:\n${mismatchList}`)
     }
-    if (moveNumber > testMoves.length) {
-        setValidationMessage(prev => prev + `\nYou have set to review up to move ${moveNumber}, but only ${testMoves.length} moves were made.`)
+    if (totalSgfMoves > testMoves.length) {
+        setValidationMessage(prev => prev + `\nSequence had ${totalSgfMoves} moves, but only ${testMoves.length} moves were made.`)
     }
   }
 
