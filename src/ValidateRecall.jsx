@@ -144,7 +144,8 @@ export default function ValidateRecall() {
       setValidationMessage(`Found ${mismatches.length} incorrect moves:\n${mismatchList}`)
     }
     if (totalSgfMoves > testMoves.length) {
-        setValidationMessage(prev => prev + `\nSequence had ${totalSgfMoves} moves, but only ${testMoves.length} moves were made.`)
+        // TODO: sometimes triggers incorrectly
+        // setValidationMessage(prev => prev + `\nSequence had ${totalSgfMoves} moves, but only ${testMoves.length} moves were made.`)
     }
   }
 
