@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "vite",
   "build": "vite build",
-  "postbuild": "cp sw.js docs/ && mkdir -p docs/icons && cp -r icons/* docs/icons/ || true",
+  "postbuild": "cp sw.js docs/ && mkdir -p docs/icons && cp -r icons/* docs/icons/ || true && cp manifest.webmanifest docs/manifest.webmanifest 2>/dev/null || true",
   "preview": "vite preview"
   },
   "dependencies": {
