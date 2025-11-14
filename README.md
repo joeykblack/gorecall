@@ -14,6 +14,28 @@ TODO
 
 Frameworks: Vite + PReact (JavaScript)
 
+Progressive Web App (PWA)
+-------------------------
+This project now includes basic PWA support. Files added:
+
+- `manifest.webmanifest` — app metadata for install (name, icons, start_url)
+- `sw.js` — a simple service worker that caches the app shell for offline use
+
+How to test PWA locally:
+
+1. Build the production bundle and serve it (service workers require HTTPS or localhost):
+
+```bash
+npm run build
+npm run preview
+```
+
+2. Open the preview URL in Chrome/Edge on desktop, open devtools -> Application -> Manifest to inspect the manifest. Use the Application -> Service Workers section to see if `sw.js` registered.
+
+3. On a mobile device, open the site over HTTPS (or on localhost) and you should see an install prompt (or use the browser menu "Install app").
+
+If you'd like a more advanced service worker (runtime caching, strategies, push notifications, or Workbox integration), I can add that.
+
 Quick start:
 
 ```bash
