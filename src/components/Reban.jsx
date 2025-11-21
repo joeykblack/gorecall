@@ -42,7 +42,7 @@ export default function Reban({
   }, [signMap, maxVertex, minVertex, boardPadding])
 
   return (
-    <div ref={containerRef} className={className} style={{ width: '100%', maxWidth, boxSizing: 'border-box' }}>
+    <div ref={containerRef} className={className} style={{ width: '100%', maxWidth, boxSizing: 'border-box', display: 'flex', justifyContent: 'center' }}>
       <Goban
         signMap={signMap.map(row => row.map(cell => cell?.sign || 0))}
         markerMap={markerMap}
