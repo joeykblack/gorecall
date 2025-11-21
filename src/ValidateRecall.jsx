@@ -1,6 +1,6 @@
-import { useEffect, useState, useRef } from 'preact/hooks'
+import { useEffect, useState } from 'preact/hooks'
 import '@sabaki/shudan/css/goban.css'
-import { Goban } from '@sabaki/shudan'
+import Reban from './components/Reban'
 import { processGame } from './lib/game'
 
 export default function ValidateRecall() {
@@ -16,40 +16,7 @@ export default function ValidateRecall() {
     return saved ? parseInt(saved, 10) : 0
   })
 
-  // Responsive sizing for each Goban in this view
-  const testBoardRef = useRef(null)
-  const sgfBoardRef = useRef(null)
-  const [computedTestVertexSize, setComputedTestVertexSize] = useState(28)
-  const [computedSgfVertexSize, setComputedSgfVertexSize] = useState(28)
-
-  useEffect(() => {
-    const maxVertex = 32
-    const minVertex = 12
-    const boardPadding = 16
-
-    function recompute() {
-      const testContainer = testBoardRef.current
-      const sgfContainer = sgfBoardRef.current
-      const size = 19
-
-      const availableWidthTest = testContainer ? testContainer.clientWidth : window.innerWidth
-      const tentativeTest = Math.floor((availableWidthTest - 2 * boardPadding) / (Math.max(1, size + 1)))
-      setComputedTestVertexSize(Math.max(minVertex, Math.min(maxVertex, tentativeTest)))
-
-      const availableWidthSgf = sgfContainer ? sgfContainer.clientWidth : window.innerWidth
-      const tentativeSgf = Math.floor((availableWidthSgf - 2 * boardPadding) / (Math.max(1, size + 1)))
-      setComputedSgfVertexSize(Math.max(minVertex, Math.min(maxVertex, tentativeSgf)))
-      
-    }
-
-    recompute()
-    window.addEventListener('resize', recompute)
-    window.addEventListener('orientationchange', recompute)
-    return () => {
-      window.removeEventListener('resize', recompute)
-      window.removeEventListener('orientationchange', recompute)
-    }
-  }, [])
+  // Reban component handles responsive sizing for Goban
 
   useEffect(() => {
     // Load test moves from localStorage
@@ -177,32 +144,20 @@ export default function ValidateRecall() {
 
           <div>
             <h3>Your Moves</h3>
-            <div ref={testBoardRef} >
-              <Goban
-                signMap={testBoard.map(row => row.map(cell => cell?.sign || 0))}
-                markerMap={testBoard.map(row => 
-                  row.map(cell => cell?.moveNumber ? ({ type: 'label', label: cell.moveNumber.toString() }) : null)
-                )}
-                vertexSize={computedTestVertexSize}
-                showCoordinates={true}
-                style={{ margin: '0.5rem 0' }}
-              />
-            </div>
+            <Reban
+              signMap={testBoard}
+              markerMap={testBoard.map(row => row.map(cell => cell?.moveNumber ? ({ type: 'label', label: cell.moveNumber.toString() }) : null))}
+              showCoordinates={true}
+            />
           </div>
 
           <div>
             <h3>SGF Moves</h3>
-            <div ref={sgfBoardRef}>
-              <Goban
-                signMap={sgfBoard.map(row => row.map(cell => cell?.sign || 0))}
-                markerMap={sgfBoard.map(row => 
-                  row.map(cell => cell?.moveNumber ? ({ type: 'label', label: cell.moveNumber.toString() }) : null)
-                )}
-                vertexSize={computedSgfVertexSize}
-                showCoordinates={true}
-                style={{ margin: '0.5rem 0' }}
-              />
-            </div>
+            <Reban
+              signMap={sgfBoard}
+              markerMap={sgfBoard.map(row => row.map(cell => cell?.moveNumber ? ({ type: 'label', label: cell.moveNumber.toString() }) : null))}
+              showCoordinates={true}
+            />
           </div>
 
         </div>

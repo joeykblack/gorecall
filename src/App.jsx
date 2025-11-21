@@ -4,6 +4,7 @@ import { Goban } from '@sabaki/shudan'
 import { processGame } from './lib/game'
 import TestRecall from './TestRecall'
 import ValidateRecall from './ValidateRecall'
+import Reban from './components/Reban'
 
 // Simple error boundary to catch render-time errors and show them in the UI
 import { Component } from 'preact'
@@ -428,20 +429,12 @@ export default function App() {
             Loading...
           </div>
         )}
-        <div ref={boardContainerRef}>
-          <Goban
-            signMap={signMap.map(row => row.map(cell => cell?.sign || 0))}
-            vertexSize={computedVertexSize}
-            showCoordinates={true}
-            markerMap={signMap.map(row => 
-              row.map(cell => cell?.moveNumber ? 
-                { type: 'label', label: cell.moveNumber.toString() } : 
-                null
-              )
-            )}
-            style={{ margin: '1rem 0'}}
-          />
-        </div>
+        <Reban
+          signMap={signMap}
+          markerMap={signMap.map(row => row.map(cell => cell?.moveNumber ? { type: 'label', label: cell.moveNumber.toString() } : null))}
+          showCoordinates={true}
+          style={{ margin: '1rem 0' }}
+        />
 
         <div style={{ marginBottom: '1rem' }}>
           <button onClick={() => {
