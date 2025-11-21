@@ -1,4 +1,4 @@
-import { Component } from 'preact'
+import { Component, createRef } from 'preact'
 import '@sabaki/shudan/css/goban.css'
 import Reban from './components/Reban'
 import { processGame } from './lib/game'
@@ -28,6 +28,7 @@ export default class TrainRecall extends Component {
     this.handleFileSelect = this.handleFileSelect.bind(this)
     this.handleMoveNumberChange = this.handleMoveNumberChange.bind(this)
     this._mounted = false
+    this.fileInputRef = createRef()
   }
 
   componentDidMount() {
@@ -62,9 +63,9 @@ export default class TrainRecall extends Component {
   }
 
   async runProcessingIfNeeded() {
-    const sgfContent = localStorage.getItem('lastSgfContent')
-    const fileInput = document.querySelector('input[type="file"]')
-    const file = fileInput?.files?.[0]
+  const sgfContent = localStorage.getItem('lastSgfContent')
+  const fileInput = this.fileInputRef?.current
+  const file = fileInput?.files?.[0]
 
     // Update global state used by processGame
     window.startPos = this.state.startPos
@@ -138,8 +139,8 @@ export default class TrainRecall extends Component {
     try { localStorage.setItem('moveNumber', num.toString()) } catch (e) {}
 
     // If we have a file loaded, re-run processing immediately
-    const fileInput = document.querySelector('input[type="file"]')
-    const file = fileInput?.files?.[0]
+  const fileInput = this.fileInputRef?.current
+  const file = fileInput?.files?.[0]
     if (file) {
       this.setState({ loading: true })
       try {
@@ -211,6 +212,7 @@ export default class TrainRecall extends Component {
             <label>
               Select SGF file:
               <input
+                ref={this.fileInputRef}
                 type="file"
                 accept=".sgf"
                 onChange={this.handleFileSelect}
