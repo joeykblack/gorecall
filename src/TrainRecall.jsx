@@ -26,6 +26,9 @@ export default class TrainRecall extends Component {
       totalMoves: 0,
       error: null,
       loading: false
+      ,
+      sequencesIndex: [],
+      filteredIndices: []
     }
 
     // Variation index persisted for non-random selection
@@ -64,6 +67,28 @@ export default class TrainRecall extends Component {
     }
     window.addEventListener('moveNumberChanged', this._moveNumberHandler)
 
+    // Load any previously-saved sequences index from localStorage into state
+    try {
+      const raw = localStorage.getItem('sequencesIndex')
+      const idx = raw ? JSON.parse(raw) : []
+      if (idx && idx.length > 0) {
+        // Initialize filteredIndices based on current startPos
+        const startPos = this.state.startPos || ''
+        let filtered = idx.map((_, i) => i)
+        if (startPos) {
+          const matches = []
+          for (let i = 0; i < idx.length; i++) {
+            const item = idx[i]
+            if (item && item.firstMove === startPos) matches.push(i)
+          }
+          if (matches.length > 0) filtered = matches
+        }
+        this.setState({ sequencesIndex: idx, filteredIndices: filtered })
+      }
+    } catch (e) {
+      // ignore parse errors
+    }
+
   }
 
   componentWillUnmount() {
@@ -79,37 +104,42 @@ export default class TrainRecall extends Component {
   // enabled the choice is random and persisted; otherwise the persisted
   // `variationIndex` value is clamped and returned.
   pickVariationIndex(sequencesIndex) {
-    if (!sequencesIndex || sequencesIndex.length === 0) return 0
+    const sequences = this.state.sequencesIndex || []
+    if (!sequences || sequences.length === 0) return 0
 
     const startPos = this.state.startPos || ''
-    // Build an array of indices into sequencesIndex that match the startPos
-    let filteredIndices = []
-    if (!startPos) {
-      filteredIndices = sequencesIndex.map((_, i) => i)
-    } else {
-      for (let i = 0; i < sequencesIndex.length; i++) {
-        const item = sequencesIndex[i]
-        if (item && item.firstMove === startPos) filteredIndices.push(i)
+    let filtered = this.state.filteredIndices || []
+
+    // If filteredIndices is empty (e.g., initial load), initialize to all
+    if (!filtered || filtered.length === 0) filtered = sequences.map((_, i) => i)
+
+    // When startPos is set, compute filtered list from sequences
+    if (startPos) {
+      const matches = []
+      for (let i = 0; i < sequences.length; i++) {
+        const item = sequences[i]
+        if (item && item.firstMove === startPos) matches.push(i)
       }
-      // If no matches, fallback to all indices
-      if (filteredIndices.length === 0) filteredIndices = sequencesIndex.map((_, i) => i)
+      if (matches.length > 0) filtered = matches
+      else filtered = sequences.map((_, i) => i)
     }
 
+    // Update state.filteredIndices so UI and counts stay in sync
+    try { this.setState({ filteredIndices: filtered }) } catch (e) { }
+
     if (this.state.randomizeVariation) {
-      const pos = Math.floor(Math.random() * filteredIndices.length)
-      // Persist the position within the filtered list (so the textbox shows
-      // the selected variation number among the filtered set)
+      const pos = Math.floor(Math.random() * filtered.length)
       try { this.setState({ variationIndex: pos }) } catch (e) { }
       try { localStorage.setItem('variationIndex', pos.toString()) } catch (e) { }
-      return filteredIndices[pos]
+      return filtered[pos]
     }
 
     // Non-random: treat variationIndex as an index into the filtered list
     let vi = Number(this.state.variationIndex)
     if (isNaN(vi) || vi < 0) vi = 0
-    if (vi >= filteredIndices.length) vi = filteredIndices.length - 1
+    if (vi >= filtered.length) vi = filtered.length - 1
     try { localStorage.setItem('variationIndex', vi.toString()) } catch (e) { }
-    return filteredIndices[vi]
+    return filtered[vi]
   }
 
   // Determine starting player: if randomizeColor is enabled pick randomly
@@ -147,13 +177,12 @@ export default class TrainRecall extends Component {
 
   // Trigger picking and loading a sequence from the saved sequences index.
   async generateSequence() {
-    const sequencesIndexRaw = localStorage.getItem('sequencesIndex')
-    const sequencesIndex = sequencesIndexRaw ? JSON.parse(sequencesIndexRaw) : []
+    const sequencesIndex = this.state.sequencesIndex || []
     if (!sequencesIndex || sequencesIndex.length === 0) return
 
     this.setState({ loading: true, error: null })
     try {
-      const pickIndex = this.pickVariationIndex(sequencesIndex)
+      const pickIndex = this.pickVariationIndex()
       const startPlayer = this.determineStartPlayer()
       const chosen = sequencesIndex[pickIndex]
       if (chosen) await this.loadAndDisplaySequence(chosen.key, startPlayer)
@@ -182,8 +211,21 @@ export default class TrainRecall extends Component {
       // Persist an index of sequences so Generate can use it
       try { localStorage.setItem('sequencesIndex', JSON.stringify(seqMeta)) } catch (e) { }
 
-      // Remember which file was loaded (UI only)
-      this.setState({ lastSgfFile: file.name })
+      // Remember which file was loaded (UI only) and cache the index in state
+      // so UI doesn't need to read localStorage synchronously.
+      const sequencesIndex = seqMeta || []
+      const startPos = this.state.startPos || ''
+      let filtered = sequencesIndex.map((_, i) => i)
+      if (startPos) {
+        const matches = []
+        for (let i = 0; i < sequencesIndex.length; i++) {
+          const item = sequencesIndex[i]
+          if (item && item.firstMove === startPos) matches.push(i)
+        }
+        if (matches.length > 0) filtered = matches
+      }
+
+      this.setState({ lastSgfFile: file.name, sequencesIndex, filteredIndices: filtered })
 
       // Do NOT auto-load any sequence here. The user must click Generate to
       // display a sequence. This keeps behavior explicit and avoids
@@ -297,14 +339,30 @@ export default class TrainRecall extends Component {
             <label style={{ marginRight: '0.5rem' }}>
               Variations starting at:
               <select
-                value={startPos}
-                onChange={(e) => {
-                  const v = e.target.value
-                  this.setState({ startPos: v })
-                  try { localStorage.setItem('startPos', v) } catch (e) { }
-                }}
-                style={{ marginLeft: '0.5rem' }}
-              >
+                  value={startPos}
+                  onChange={(e) => {
+                    const v = e.target.value
+                    // update startPos and recompute filteredIndices immediately
+                    this.setState({ startPos: v }, () => {
+                      try { localStorage.setItem('startPos', v) } catch (e) { }
+                      // recompute filteredIndices based on new startPos
+                      const sequences = this.state.sequencesIndex || []
+                      if (sequences && sequences.length > 0) {
+                        if (!v) {
+                          this.setState({ filteredIndices: sequences.map((_, i) => i) })
+                        } else {
+                          const matches = []
+                          for (let i = 0; i < sequences.length; i++) {
+                            const item = sequences[i]
+                            if (item && item.firstMove === v) matches.push(i)
+                          }
+                          this.setState({ filteredIndices: matches.length > 0 ? matches : sequences.map((_, i) => i) })
+                        }
+                      }
+                    })
+                  }}
+                  style={{ marginLeft: '0.5rem' }}
+                >
                 <option value="">Any</option>
 
                 <option value="qc">3,3</option>
@@ -351,9 +409,9 @@ export default class TrainRecall extends Component {
               style={{ width: '5rem', marginLeft: '0.5rem' }}
             />
 
-            {/* Available variations count */}
+            {/* Available variations count (based on filteredIndices) */}
             <div style={{ marginLeft: '0.5rem', color: '#444' }}>
-              {(() => { try { const r = localStorage.getItem('sequencesIndex'); const a = r ? JSON.parse(r) : []; return a.length } catch (e) { return '?' } })()} variations
+              {typeof this.state.filteredIndices === 'object' ? this.state.filteredIndices.length : '?'} variations
             </div>
           </div>
 
@@ -434,7 +492,7 @@ export default class TrainRecall extends Component {
 
           {/* Generate button placed immediately above the board */}
           <div style={{ marginBottom: '0.5rem' }}>
-            <button onClick={this.generateSequence} disabled={!(function () { try { const r = localStorage.getItem('sequencesIndex'); const a = r ? JSON.parse(r) : []; return a && a.length > 0 } catch (e) { return false } })()}>
+            <button onClick={this.generateSequence} disabled={!(this.state.filteredIndices && this.state.filteredIndices.length > 0)}>
               Generate
             </button>
           </div>
