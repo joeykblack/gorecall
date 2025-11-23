@@ -2,8 +2,8 @@ import { Component, createRef } from 'preact'
 import '@sabaki/shudan/css/goban.css'
 import Reban from './components/Reban'
 import Comments from './components/Comments'
-import { processGame, processSequenceObject } from './lib/game'
 import { splitFileIntoSequences } from './lib/sgf'
+import { processSequenceObject } from './lib/game'
 
 export default class TrainRecall extends Component {
   constructor(props) {
@@ -53,55 +53,48 @@ export default class TrainRecall extends Component {
   }
 
   componentDidUpdate(prevProps, prevState) {
-    // Only re-run processing when moveNumber or key change. Option toggles
-    // (randomizeVariation/color/orientation, startPos) should not trigger
-    // immediate sequence loading — the user must click Generate.
-    // Only re-run processing when `key` changes. We intentionally do NOT
-    // re-run when `moveNumber` changes — changing the move number should not
-    // trigger sequence processing automatically.
-    // Intentionally do not call runProcessingIfNeeded here; processing
-    // should only run in direct response to a file selection.
+
   }
 
-  async runProcessingIfNeeded() {
-    const fileInput = this.fileInputRef?.current
-    const file = fileInput?.files?.[0]
-    // sequencesIndex is the catalog of stored sequences persisted earlier
-    const sequencesIndexRaw = localStorage.getItem('sequencesIndex')
-    const sequencesIndex = sequencesIndexRaw ? JSON.parse(sequencesIndexRaw) : []
+  // async runProcessingIfNeeded() {
+  //   const fileInput = this.fileInputRef?.current
+  //   const file = fileInput?.files?.[0]
+  //   // sequencesIndex is the catalog of stored sequences persisted earlier
+  //   const sequencesIndexRaw = localStorage.getItem('sequencesIndex')
+  //   const sequencesIndex = sequencesIndexRaw ? JSON.parse(sequencesIndexRaw) : []
 
-    // Update global state used by processGame
-    window.startPos = this.state.startPos
-    window.randomizeVariation = this.state.randomizeVariation
-    window.randomizeOrientation = this.state.randomizeOrientation
+  //   // Update global state used by processGame
+  //   window.startPos = this.state.startPos
+  //   window.randomizeVariation = this.state.randomizeVariation
+  //   window.randomizeOrientation = this.state.randomizeOrientation
 
-    if (!file && (!sequencesIndex || sequencesIndex.length === 0)) return
+  //   if (!file && (!sequencesIndex || sequencesIndex.length === 0)) return
 
-    this.setState({ loading: true })
-    try {
-      // If a fresh file is available, split it into sequences and persist the
-      // sequences index. Do not auto-load any sequence here — the user must
-      // click Generate to display a sequence.
-      if (file) {
-        try {
-          const seqMeta = await splitFileIntoSequences(file)
-          try { localStorage.setItem('sequencesIndex', JSON.stringify(seqMeta)) } catch (e) { }
-          this.setState({ lastSgfFile: file.name })
-        } catch (err) {
-          // If splitting fails, surface the error but don't auto-display.
-          this.setState({ error: err.message })
-        }
-      }
+  //   this.setState({ loading: true })
+  //   try {
+  //     // If a fresh file is available, split it into sequences and persist the
+  //     // sequences index. Do not auto-load any sequence here — the user must
+  //     // click Generate to display a sequence.
+  //     if (file) {
+  //       try {
+  //         const seqMeta = await splitFileIntoSequences(file)
+  //         try { localStorage.setItem('sequencesIndex', JSON.stringify(seqMeta)) } catch (e) { }
+  //         this.setState({ lastSgfFile: file.name })
+  //       } catch (err) {
+  //         // If splitting fails, surface the error but don't auto-display.
+  //         this.setState({ error: err.message })
+  //       }
+  //     }
 
-      // If no file but we have sequences stored, do nothing — wait for user
-      // to press Generate.
-    } catch (err) {
-      if (!this._mounted) return
-      this.setState({ error: err.message })
-    } finally {
-      if (this._mounted) this.setState({ loading: false })
-    }
-  }
+  //     // If no file but we have sequences stored, do nothing — wait for user
+  //     // to press Generate.
+  //   } catch (err) {
+  //     if (!this._mounted) return
+  //     this.setState({ error: err.message })
+  //   } finally {
+  //     if (this._mounted) this.setState({ loading: false })
+  //   }
+  // }
 
   // Load a stored sequence from localStorage by key and display it
   async loadAndDisplaySequence(sequenceKey) {
@@ -166,7 +159,7 @@ export default class TrainRecall extends Component {
       // unintended loads when toggling options.
       // Still run any file-based processing centrally via runProcessingIfNeeded
       // so behaviour that belongs to file selection can run in one place.
-      await this.runProcessingIfNeeded()
+      // await this.runProcessingIfNeeded()
     } catch (err) {
       this.setState({ error: err.message })
       console.error(err)

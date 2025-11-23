@@ -2,7 +2,6 @@ import { Component } from 'preact'
 import '@sabaki/shudan/css/goban.css'
 import Reban from './components/Reban'
 import Comments from './components/Comments'
-import { processGame } from './lib/game'
 
 export default class ValidateRecall extends Component {
   constructor(props) {

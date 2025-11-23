@@ -1,93 +1,5 @@
 import { parse } from '@sabaki/sgf'
 
-export async function parseFile(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    
-    reader.onload = evt => {
-      try {
-        const sgfContent = evt.target.result
-        const [game] = parse(sgfContent)
-        
-        if (!game) {
-          throw new Error('No game found in SGF')
-        }
-
-        // Extract moves and comments by traversing the game tree
-        const moves = []
-        const comments = []
-        
-        // Function to extract moves recursively, following the main variation
-        function extractMoves(node) {
-          if (!node) return
-          
-          // Process all nodes in current sequence
-          if (node.data) {
-            if (node.data.B) {
-              moves.push(node.data.B[0])
-            }
-            if (node.data.W) {
-              moves.push(node.data.W[0])
-            }
-            if (node.data.C) {
-              comments.push(node.data.C[0])
-            } else {
-                comments.push(" ")
-            }
-          }
-          
-          // Select which variation to follow
-          if (node.children && node.children.length > 0) {
-            if (window.randomizeVariation && node.children.length > 1) {
-              // Randomly select a child
-              const randomIndex = Math.floor(Math.random() * node.children.length)
-              extractMoves(node.children[randomIndex])
-            } else {
-              // Follow main variation (first child)
-              extractMoves(node.children[0])
-            }
-          }
-        }
-
-        var startNode = game.children?.[0] || null
-        // If at root node and we have a starting position preference
-        if (game.children.length > 1 && window.startPos) {
-            // Find child node matching the starting position
-            const matchingChild = game.children.find(child => 
-            child.data?.B?.[0] === window.startPos
-            )
-            startNode = matchingChild || game.children[0]
-        } else if (game.children.length > 1 && window.randomizeVariation) {
-              const randomIndex = Math.floor(Math.random() * game.children.length)
-              startNode = game.children[randomIndex]
-        }
-        
-        // Start extracting from the game root
-        extractMoves(startNode)
-        
-        // Get game info from root node if available
-        const rootNode = game.nodes?.[0] || {}
-        resolve({ 
-          moves,
-          comments,
-          info: {
-            playerBlack: rootNode.PB?.[0] || null,
-            playerWhite: rootNode.PW?.[0] || null,
-            result: rootNode.RE?.[0] || null,
-            size: parseInt(rootNode.SZ?.[0] || '19', 10),
-            komi: parseFloat(rootNode.KM?.[0] || '6.5'),
-          }
-        })
-      } catch (err) {
-        console.error('SGF Parse error:', err)
-        reject(new Error('Failed to parse SGF file: ' + err.message))
-      }
-    }
-
-    reader.onerror = () => reject(new Error('Failed to read file'))
-    reader.readAsText(file)
-  })
-}
 
 // Read a File and split it into sequences (one per leaf) using DFS.
 // Each sequence is written directly to localStorage as a JSON object to avoid
@@ -107,32 +19,50 @@ export async function splitFileIntoSequences(file) {
         let seqCount = 0
 
         // Traverse tree depth-first and collect moves/comments along the path
-        function dfs(node, movesAcc, commentsAcc) {
+        // Additionally build a chain of node clones (each with { data, children })
+        // so we can construct a minimal SGF-game object that contains only the
+        // root node and the sequence branch.
+        function dfs(node, nodeClonesAcc) {
           if (!node) return
 
-          let moves = movesAcc.slice()
-          let comments = commentsAcc.slice()
+          let nodeClones = nodeClonesAcc.slice()
 
-          if (node.data) {
-            if (node.data.B) moves.push(node.data.B[0])
-            if (node.data.W) moves.push(node.data.W[0])
-            if (node.data.C) comments.push(node.data.C[0])
-            else comments.push(' ')
-          }
+          // Clone this node minimally: include its data and an empty children
+          // array; we'll wire children together when we store the sequence.
+          const nodeClone = { data: node.data, children: [] }
+          nodeClones.push(nodeClone)
+
 
           if (!node.children || node.children.length === 0) {
-            // Leaf: store this sequence as a small object in localStorage
+            // Leaf: store this sequence as a minimal SGF-like game object in
+            // localStorage. We will create a game-shaped object that includes
+            // only the root node and the chain of nodes for this sequence.
             seqCount += 1
-            const seqObj = {
-              moves,
-              comments,
-              info: {
-                fileName: file.name || null,
-                createdAt: Date.now()
+
+            // If we collected any node clones for the sequence, wire them up
+            // into a single-branch children chain so the structure matches a
+            // parsed SGF game's shape.
+            if (nodeClones.length > 1) {
+              // Link chain: each clone's children = [nextClone]
+              for (let i = 0; i < nodeClones.length - 1; i++) {
+                nodeClones[i].children = [nodeClones[i + 1]]
               }
             }
 
-            const key = `sequence:${Date.now()}:${Math.floor(Math.random() * 1e6)}:${seqCount}`
+            const seqObj = 
+              {
+                data: game.data,
+                children: [nodeClones[0]],
+                info: {
+                  fileName: file.name || null
+                }
+              }
+
+            // Use a stable key that includes the original file name (sanitized)
+            // and the sequence index. Avoid date/random components so keys are
+            // easier to correlate with the source file.
+            const safeName = (file.name || 'unknown').replace(/[^a-zA-Z0-9._-]/g, '_')
+            const key = `seq:${safeName}:${seqCount}`
             try {
               localStorage.setItem(key, JSON.stringify(seqObj))
             } catch (e) {
@@ -140,18 +70,18 @@ export async function splitFileIntoSequences(file) {
               return reject(new Error('Failed to write sequence to localStorage: ' + e.message))
             }
 
-            sequencesMeta.push({ key, name: `${file.name}#${seqCount}`, firstMove: moves[0] || null, totalMoves: moves.length })
+            sequencesMeta.push({ key, name: `${file.name}#${seqCount}` })
             return
           }
 
           // Recurse into children
           for (let i = 0; i < node.children.length; i++) {
-            dfs(node.children[i], moves, comments)
+            dfs(node.children[i], nodeClones)
           }
         }
 
         const startNode = game.children?.[0] || null
-        dfs(startNode, [], [])
+        dfs(startNode, [])
 
         resolve(sequencesMeta)
       } catch (err) {
