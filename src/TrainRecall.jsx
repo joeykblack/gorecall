@@ -36,6 +36,14 @@ export default class TrainRecall extends Component {
       this.state.variationIndex = 0
     }
 
+    // Color choice persisted: 'black' or 'white'
+    try {
+      const cc = localStorage.getItem('colorChoice')
+      this.state.colorChoice = cc === 'white' ? 'white' : 'black'
+    } catch (e) {
+      this.state.colorChoice = 'black'
+    }
+
     this.handleFileSelect = this.handleFileSelect.bind(this)
     this.handleMoveNumberChange = this.handleMoveNumberChange.bind(this)
     this.generateSequence = this.generateSequence.bind(this)
@@ -102,8 +110,17 @@ export default class TrainRecall extends Component {
         if (vi >= sequencesIndex.length) vi = sequencesIndex.length - 1
         pickIndex = vi
       }
-
-      const startPlayer = this.state.randomizeColor ? (Math.random() < 0.5 ? 1 : -1) : 1
+      // Determine starting player based on color randomization or selected choice
+      let startPlayer
+      if (this.state.randomizeColor) {
+        const pick = Math.random() < 0.5 ? 'black' : 'white'
+        this.setState({ colorChoice: pick })
+        try { localStorage.setItem('colorChoice', pick) } catch (e) { }
+        startPlayer = pick === 'black' ? 1 : -1
+      } else {
+        const choice = this.state.colorChoice || 'black'
+        startPlayer = choice === 'black' ? 1 : -1
+      }
       const chosen = sequencesIndex[pickIndex]
       if (chosen) await this.loadAndDisplaySequence(chosen.key, startPlayer)
     } catch (err) {
@@ -306,9 +323,9 @@ export default class TrainRecall extends Component {
             </div>
           </div>
 
-          {/* Color/orientation on next line */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <label style={{ marginLeft: '1rem', display: 'flex', alignItems: 'center' }}>
+          {/* Randomize Color on its own line with radio select */}
+          <div style={{ marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <label style={{ display: 'flex', alignItems: 'center' }}>
               <input
                 type="checkbox"
                 checked={randomizeColor}
@@ -321,6 +338,39 @@ export default class TrainRecall extends Component {
               />
               Randomize Color
             </label>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginLeft: '0.5rem' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                <input
+                  type="radio"
+                  name="colorChoice"
+                  value="black"
+                  checked={this.state.colorChoice === 'black'}
+                  onChange={(e) => {
+                    this.setState({ colorChoice: 'black' })
+                    try { localStorage.setItem('colorChoice', 'black') } catch (err) { }
+                  }}
+                />
+                Black
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                <input
+                  type="radio"
+                  name="colorChoice"
+                  value="white"
+                  checked={this.state.colorChoice === 'white'}
+                  onChange={(e) => {
+                    this.setState({ colorChoice: 'white' })
+                    try { localStorage.setItem('colorChoice', 'white') } catch (err) { }
+                  }}
+                />
+                White
+              </label>
+            </div>
+          </div>
+
+          {/* Randomize Orientation on the next line */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <label style={{ marginLeft: '1rem', display: 'flex', alignItems: 'center' }}>
               <input
                 type="checkbox"
