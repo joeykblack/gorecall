@@ -28,6 +28,14 @@ export default class TrainRecall extends Component {
       loading: false
     }
 
+    // Variation index persisted for non-random selection
+    try {
+      const vi = localStorage.getItem('variationIndex')
+      this.state.variationIndex = vi ? parseInt(vi, 10) : 0
+    } catch (e) {
+      this.state.variationIndex = 0
+    }
+
     this.handleFileSelect = this.handleFileSelect.bind(this)
     this.handleMoveNumberChange = this.handleMoveNumberChange.bind(this)
     this.generateSequence = this.generateSequence.bind(this)
@@ -82,7 +90,19 @@ export default class TrainRecall extends Component {
 
     this.setState({ loading: true, error: null })
     try {
-      const pickIndex = this.state.randomizeVariation ? Math.floor(Math.random() * sequencesIndex.length) : 0
+      let pickIndex
+      if (this.state.randomizeVariation) {
+        pickIndex = Math.floor(Math.random() * sequencesIndex.length)
+        // persist and show the randomly chosen variation
+        this.setState({ variationIndex: pickIndex })
+        try { localStorage.setItem('variationIndex', pickIndex.toString()) } catch (e) { }
+      } else {
+        let vi = Number(this.state.variationIndex)
+        if (isNaN(vi) || vi < 0) vi = 0
+        if (vi >= sequencesIndex.length) vi = sequencesIndex.length - 1
+        pickIndex = vi
+      }
+
       const startPlayer = this.state.randomizeColor ? (Math.random() < 0.5 ? 1 : -1) : 1
       const chosen = sequencesIndex[pickIndex]
       if (chosen) await this.loadAndDisplaySequence(chosen.key, startPlayer)
@@ -250,8 +270,9 @@ export default class TrainRecall extends Component {
             </label>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <label style={{ marginLeft: '1rem' }}>
+          {/* Randomize Variations on its own line with a variation index input */}
+          <div style={{ marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <label style={{ display: 'flex', alignItems: 'center' }}>
               <input
                 type="checkbox"
                 checked={randomizeVariation}
@@ -264,6 +285,29 @@ export default class TrainRecall extends Component {
               />
               Randomize Variations
             </label>
+
+            {/* Variation index input (shows current variation number) */}
+            <input
+              type="number"
+              min={0}
+              value={this.state.variationIndex}
+              onChange={(e) => {
+                let v = parseInt(e.target.value, 10)
+                if (Number.isNaN(v)) v = 0
+                this.setState({ variationIndex: v })
+                try { localStorage.setItem('variationIndex', v.toString()) } catch (err) { }
+              }}
+              style={{ width: '5rem', marginLeft: '0.5rem' }}
+            />
+
+            {/* Available variations count */}
+            <div style={{ marginLeft: '0.5rem', color: '#444' }}>
+              {(() => { try { const r = localStorage.getItem('sequencesIndex'); const a = r ? JSON.parse(r) : []; return a.length } catch (e) { return '?' } })()} variations
+            </div>
+          </div>
+
+          {/* Color/orientation on next line */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <label style={{ marginLeft: '1rem', display: 'flex', alignItems: 'center' }}>
               <input
                 type="checkbox"
