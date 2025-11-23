@@ -83,7 +83,15 @@ export default class TrainRecall extends Component {
           }
           if (matches.length > 0) filtered = matches
         }
-        this.setState({ sequencesIndex: idx, filteredIndices: filtered })
+        this.setState({ sequencesIndex: idx, filteredIndices: filtered }, () => {
+          // Automatically generate a sequence on page load/refresh when we
+          // have a saved sequences index.
+          try {
+            this.generateSequence()
+          } catch (e) {
+            // ignore errors from auto-generation
+          }
+        })
       }
     } catch (e) {
       // ignore parse errors
