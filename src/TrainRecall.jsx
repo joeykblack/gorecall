@@ -1,6 +1,7 @@
 import { Component, createRef } from 'preact'
 import '@sabaki/shudan/css/goban.css'
 import Reban from './components/Reban'
+import Comments from './components/Comments'
 import { processGame } from './lib/game'
 
 export default class TrainRecall extends Component {
@@ -29,6 +30,7 @@ export default class TrainRecall extends Component {
     this.handleMoveNumberChange = this.handleMoveNumberChange.bind(this)
     this._mounted = false
     this.fileInputRef = createRef()
+    this.commentsRef = createRef()
   }
 
   componentDidMount() {
@@ -162,51 +164,51 @@ export default class TrainRecall extends Component {
       <div className="app">
         <h1 style={{ margin: '1rem 0', textAlign: 'center' }}>Go Recall</h1>
         <div className="app-content">
-          <div style={{ 
-                    width: '100%',
-                    maxWidth: '800px',
-                    marginBottom: '1rem',
-                    padding: '0.5rem',
-                    backgroundColor: '#f5f5f5',
-                    borderRadius: '4px'
-                }}>
-              <details>
-                  <summary>About this app</summary>
-                  <p>This is an app for practicing visualization and recall of a Go position.</p>
-                  <p>It was inspired by <a href="https://www.youtube.com/watch?v=gfve7yYCS08">The Power of Visualization: How to See Moves Before They're Played | Jonas Welticke 6d</a></p>
-                  <p>I do not know how valuable this method of study is or if this app implements it well. You are probably better off doing tsumego.</p>
-                  <p>There are 2 main ways to use this app:</p>
-                  <ol>
-                      <li>Practice with variations
-                          <ol>
-                              <li>Load an SGF file with multiple variations such as <a href="http://waterfire.us/Kogo's%20Joseki%20Dictionary.sgf">Kogo's Joseki Dictionary</a></li>
-                              <li>Set the number of moves to a resonable number (e.g. 5)</li>
-                              <li>Optional: Set the variation starting position to a specific point (e.g. 3,3 to only see 3,3 joseki)</li>
-                              <li>Select all 3 randomization options to get maximum variety</li>
-                              <li>Visualize the position and then hit Test Recall</li>
-                              <li>Try to recall the position by placing stones on an empty board</li>
-                              <li>Hit Validate Recall to see how well you did</li>   
-                              <li>Hit Next to try another variation from the same SGF</li>
-                          </ol>
-                      </li>
-                      <li>Practice with a single game
-                          <ol>
-                              <li>Load an SGF game such as <a href="https://homepages.cwi.nl/~aeb/go/games/games/Shusaku/#castlegames">one of the castle games</a></li>
-                              <li>Set the number of moves to a resonable number (e.g. 5)</li>
-                              <li>Disable randomization</li>
-                              <li>Visualize the position and then hit Test Recall</li>
-                              <li>Try to recall the position by placing stones on an empty board</li>
-                              <li>Hit Validate Recall to see how well you did</li>   
-                              <li>Hit "Next +1 Move" to try again with one more move</li>
-                          </ol>
-                      </li>
-                  </ol>
-                  More SGF files:
-                  <ul>
-                      <li><a href="https://xmp.net/arno/fuseki.html">Arno's fuseki database</a></li>
-                  </ul>
-              </details>
-          </div>
+      <div style={{ 
+          width: '100%',
+          maxWidth: '800px',
+          marginBottom: '1rem',
+          padding: '0.5rem',
+          backgroundColor: '#f5f5f5',
+          borderRadius: '4px'
+        }}>
+        <details>
+          <summary>About this app</summary>
+          <p>This is an app for practicing visualization and recall of a Go position.</p>
+          <p>It was inspired by <a href="https://www.youtube.com/watch?v=gfve7yYCS08">The Power of Visualization: How to See Moves Before They're Played | Jonas Welticke 6d</a></p>
+          <p>I do not know how valuable this method of study is or if this app implements it well. You are probably better off doing tsumego.</p>
+          <p>There are 2 main ways to use this app:</p>
+          <ol>
+            <li>Practice with variations
+              <ol>
+                <li>Load an SGF file with multiple variations such as <a href="http://waterfire.us/Kogo's%20Joseki%20Dictionary.sgf">Kogo's Joseki Dictionary</a></li>
+                <li>Set the number of moves to a resonable number (e.g. 5)</li>
+                <li>Optional: Set the variation starting position to a specific point (e.g. 3,3 to only see 3,3 joseki)</li>
+                <li>Select all 3 randomization options to get maximum variety</li>
+                <li>Visualize the position and then hit Test Recall</li>
+                <li>Try to recall the position by placing stones on an empty board</li>
+                <li>Hit Validate Recall to see how well you did</li>
+                <li>Hit Next to try another variation from the same SGF</li>
+              </ol>
+            </li>
+            <li>Practice with a single game
+              <ol>
+                <li>Load an SGF game such as <a href="https://homepages.cwi.nl/~aeb/go/games/games/Shusaku/#castlegames">one of the castle games</a></li>
+                <li>Set the number of moves to a resonable number (e.g. 5)</li>
+                <li>Disable randomization</li>
+                <li>Visualize the position and then hit Test Recall</li>
+                <li>Try to recall the position by placing stones on an empty board</li>
+                <li>Hit Validate Recall to see how well you did</li>
+                <li>Hit "Next +1 Move" to try again with one more move</li>
+              </ol>
+            </li>
+          </ol>
+          More SGF files:
+          <ul>
+            <li><a href="https://xmp.net/arno/fuseki.html">Arno's fuseki database</a></li>
+          </ul>
+        </details>
+      </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <label>
@@ -335,41 +337,7 @@ export default class TrainRecall extends Component {
             </button>
           </div>
 
-          {comments.length > 0 && (
-            <div style={{ 
-              width: '100%',
-              maxWidth: '800px',
-              marginBottom: '1rem',
-              padding: '0.5rem',
-              backgroundColor: '#f5f5f5',
-              borderRadius: '4px'
-            }}>
-              <details open>
-                  <summary><strong>Comments:</strong></summary>
-                  <ol style={{ margin: '0.5rem 0', paddingLeft: '1.5rem' }}>
-                  {comments.map((comment, i) => {
-                    // Do not render empty comments, but keep the original index as the key
-                    if (comment == null) return null
-                    const text = typeof comment === 'string' ? comment.trim() : String(comment)
-                    if (text === '') return null
-                    return (
-                      <li key={i} value={i + 1}>
-                        <pre style={{
-                          margin: '0.25rem 0',
-                          whiteSpace: 'pre-wrap',
-                          wordWrap: 'break-word',
-                          fontFamily: 'inherit',
-                          fontSize: 'inherit'
-                        }}>
-                          {comment}
-                        </pre>
-                      </li>
-                    )
-                  })}
-                  </ol>
-              </details>
-            </div>
-          )}
+          <Comments comments={comments} detailsRef={this.commentsRef} />
         </div>
       </div>
     )
