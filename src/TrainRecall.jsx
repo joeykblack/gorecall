@@ -58,11 +58,10 @@ export default class TrainRecall extends Component {
   }
 
   // Load a stored sequence from localStorage by key and display it
-  async loadAndDisplaySequence(sequenceKey) {
+  async loadAndDisplaySequence(sequenceKey, startPlayer) {
     if (!sequenceKey) return
     try {
       const seqObj = await getSequence(sequenceKey)
-      const startPlayer = this.state.randomizeColor ? (Math.random() < 0.5 ? 1 : -1) : 1
       if (seqObj) {
         const { signMap: newSignMap, totalMoves: total, comments: moveComments } = await processSequenceObject(seqObj, this.state.moveNumber, startPlayer)
         if (!this._mounted) return
@@ -84,8 +83,9 @@ export default class TrainRecall extends Component {
     this.setState({ loading: true, error: null })
     try {
       const pickIndex = this.state.randomizeVariation ? Math.floor(Math.random() * sequencesIndex.length) : 0
+      const startPlayer = this.state.randomizeColor ? (Math.random() < 0.5 ? 1 : -1) : 1
       const chosen = sequencesIndex[pickIndex]
-      if (chosen) await this.loadAndDisplaySequence(chosen.key)
+      if (chosen) await this.loadAndDisplaySequence(chosen.key, startPlayer)
     } catch (err) {
       console.error('generateSequence error', err)
       this.setState({ error: err.message })
