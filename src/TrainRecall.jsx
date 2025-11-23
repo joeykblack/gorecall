@@ -57,46 +57,6 @@ export default class TrainRecall extends Component {
 
   }
 
-  // async runProcessingIfNeeded() {
-  //   const fileInput = this.fileInputRef?.current
-  //   const file = fileInput?.files?.[0]
-  //   // sequencesIndex is the catalog of stored sequences persisted earlier
-  //   const sequencesIndexRaw = localStorage.getItem('sequencesIndex')
-  //   const sequencesIndex = sequencesIndexRaw ? JSON.parse(sequencesIndexRaw) : []
-
-  //   // Update global state used by processGame
-  //   window.startPos = this.state.startPos
-  //   window.randomizeVariation = this.state.randomizeVariation
-  //   window.randomizeOrientation = this.state.randomizeOrientation
-
-  //   if (!file && (!sequencesIndex || sequencesIndex.length === 0)) return
-
-  //   this.setState({ loading: true })
-  //   try {
-  //     // If a fresh file is available, split it into sequences and persist the
-  //     // sequences index. Do not auto-load any sequence here — the user must
-  //     // click Generate to display a sequence.
-  //     if (file) {
-  //       try {
-  //         const seqMeta = await splitFileIntoSequences(file)
-  //         try { localStorage.setItem('sequencesIndex', JSON.stringify(seqMeta)) } catch (e) { }
-  //         this.setState({ lastSgfFile: file.name })
-  //       } catch (err) {
-  //         // If splitting fails, surface the error but don't auto-display.
-  //         this.setState({ error: err.message })
-  //       }
-  //     }
-
-  //     // If no file but we have sequences stored, do nothing — wait for user
-  //     // to press Generate.
-  //   } catch (err) {
-  //     if (!this._mounted) return
-  //     this.setState({ error: err.message })
-  //   } finally {
-  //     if (this._mounted) this.setState({ loading: false })
-  //   }
-  // }
-
   // Load a stored sequence from localStorage by key and display it
   async loadAndDisplaySequence(sequenceKey) {
     if (!sequenceKey) return
