@@ -223,12 +223,6 @@ export default class TrainRecall extends Component {
           </div>
 
           <div style={{ marginBottom: '0.5rem' }}>
-            <button onClick={this.generateSequence} disabled={!(function () { try { const r = localStorage.getItem('sequencesIndex'); const a = r ? JSON.parse(r) : []; return a && a.length > 0 } catch (e) { return false } })()}>
-              Generate
-            </button>
-          </div>
-
-          <div style={{ marginBottom: '0.5rem' }}>
             <label style={{ marginRight: '0.5rem' }}>
               Variations starting at:
               <select
@@ -309,6 +303,13 @@ export default class TrainRecall extends Component {
               Loading...
             </div>
           )}
+
+          {/* Generate button placed immediately above the board */}
+          <div style={{ marginBottom: '0.5rem' }}>
+            <button onClick={this.generateSequence} disabled={!(function () { try { const r = localStorage.getItem('sequencesIndex'); const a = r ? JSON.parse(r) : []; return a && a.length > 0 } catch (e) { return false } })()}>
+              Generate
+            </button>
+          </div>
 
           <Reban
             signMap={signMap}
