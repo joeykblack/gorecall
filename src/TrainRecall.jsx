@@ -47,6 +47,8 @@ export default class TrainRecall extends Component {
     this.handleFileSelect = this.handleFileSelect.bind(this)
     this.handleMoveNumberChange = this.handleMoveNumberChange.bind(this)
     this.generateSequence = this.generateSequence.bind(this)
+  this.pickVariationIndex = this.pickVariationIndex.bind(this)
+  this.determineStartPlayer = this.determineStartPlayer.bind(this)
     this._mounted = false
     this.fileInputRef = createRef()
     this.commentsRef = createRef()
@@ -71,6 +73,41 @@ export default class TrainRecall extends Component {
 
   componentDidUpdate(prevProps, prevState) {
 
+  }
+
+  // Pick a variation index from the available sequences. If randomization is
+  // enabled the choice is random and persisted; otherwise the persisted
+  // `variationIndex` value is clamped and returned.
+  pickVariationIndex(sequencesIndex) {
+    if (!sequencesIndex || sequencesIndex.length === 0) return 0
+    if (this.state.randomizeVariation) {
+      const idx = Math.floor(Math.random() * sequencesIndex.length)
+      try {
+        this.setState({ variationIndex: idx })
+      } catch (e) { }
+      try { localStorage.setItem('variationIndex', idx.toString()) } catch (e) { }
+      return idx
+    }
+    let vi = Number(this.state.variationIndex)
+    if (isNaN(vi) || vi < 0) vi = 0
+    if (vi >= sequencesIndex.length) vi = sequencesIndex.length - 1
+    return vi
+  }
+
+  // Determine starting player: if randomizeColor is enabled pick randomly
+  // (persisting the picked color); otherwise use the persisted/selected
+  // `colorChoice` value.
+  determineStartPlayer() {
+    if (this.state.randomizeColor) {
+      const pick = Math.random() < 0.5 ? 'black' : 'white'
+      try {
+        this.setState({ colorChoice: pick })
+      } catch (e) { }
+      try { localStorage.setItem('colorChoice', pick) } catch (e) { }
+      return pick === 'black' ? 1 : -1
+    }
+    const choice = this.state.colorChoice || 'black'
+    return choice === 'black' ? 1 : -1
   }
 
   // Load a stored sequence from localStorage by key and display it
@@ -98,29 +135,8 @@ export default class TrainRecall extends Component {
 
     this.setState({ loading: true, error: null })
     try {
-      let pickIndex
-      if (this.state.randomizeVariation) {
-        pickIndex = Math.floor(Math.random() * sequencesIndex.length)
-        // persist and show the randomly chosen variation
-        this.setState({ variationIndex: pickIndex })
-        try { localStorage.setItem('variationIndex', pickIndex.toString()) } catch (e) { }
-      } else {
-        let vi = Number(this.state.variationIndex)
-        if (isNaN(vi) || vi < 0) vi = 0
-        if (vi >= sequencesIndex.length) vi = sequencesIndex.length - 1
-        pickIndex = vi
-      }
-      // Determine starting player based on color randomization or selected choice
-      let startPlayer
-      if (this.state.randomizeColor) {
-        const pick = Math.random() < 0.5 ? 'black' : 'white'
-        this.setState({ colorChoice: pick })
-        try { localStorage.setItem('colorChoice', pick) } catch (e) { }
-        startPlayer = pick === 'black' ? 1 : -1
-      } else {
-        const choice = this.state.colorChoice || 'black'
-        startPlayer = choice === 'black' ? 1 : -1
-      }
+      const pickIndex = this.pickVariationIndex(sequencesIndex)
+      const startPlayer = this.determineStartPlayer()
       const chosen = sequencesIndex[pickIndex]
       if (chosen) await this.loadAndDisplaySequence(chosen.key, startPlayer)
     } catch (err) {
