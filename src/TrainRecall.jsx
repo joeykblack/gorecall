@@ -80,18 +80,36 @@ export default class TrainRecall extends Component {
   // `variationIndex` value is clamped and returned.
   pickVariationIndex(sequencesIndex) {
     if (!sequencesIndex || sequencesIndex.length === 0) return 0
-    if (this.state.randomizeVariation) {
-      const idx = Math.floor(Math.random() * sequencesIndex.length)
-      try {
-        this.setState({ variationIndex: idx })
-      } catch (e) { }
-      try { localStorage.setItem('variationIndex', idx.toString()) } catch (e) { }
-      return idx
+
+    const startPos = this.state.startPos || ''
+    // Build an array of indices into sequencesIndex that match the startPos
+    let filteredIndices = []
+    if (!startPos) {
+      filteredIndices = sequencesIndex.map((_, i) => i)
+    } else {
+      for (let i = 0; i < sequencesIndex.length; i++) {
+        const item = sequencesIndex[i]
+        if (item && item.firstMove === startPos) filteredIndices.push(i)
+      }
+      // If no matches, fallback to all indices
+      if (filteredIndices.length === 0) filteredIndices = sequencesIndex.map((_, i) => i)
     }
+
+    if (this.state.randomizeVariation) {
+      const pos = Math.floor(Math.random() * filteredIndices.length)
+      // Persist the position within the filtered list (so the textbox shows
+      // the selected variation number among the filtered set)
+      try { this.setState({ variationIndex: pos }) } catch (e) { }
+      try { localStorage.setItem('variationIndex', pos.toString()) } catch (e) { }
+      return filteredIndices[pos]
+    }
+
+    // Non-random: treat variationIndex as an index into the filtered list
     let vi = Number(this.state.variationIndex)
     if (isNaN(vi) || vi < 0) vi = 0
-    if (vi >= sequencesIndex.length) vi = sequencesIndex.length - 1
-    return vi
+    if (vi >= filteredIndices.length) vi = filteredIndices.length - 1
+    try { localStorage.setItem('variationIndex', vi.toString()) } catch (e) { }
+    return filteredIndices[vi]
   }
 
   // Determine starting player: if randomizeColor is enabled pick randomly
