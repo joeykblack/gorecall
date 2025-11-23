@@ -14,6 +14,7 @@ TODO
 - bigger variation and move number buttons
 - startPos match symetrical
 - move test recall buttons
+- fix random orientation
 
 Later TODO
 - install as app on phone
