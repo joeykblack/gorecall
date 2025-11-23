@@ -29,6 +29,7 @@ export default class TrainRecall extends Component {
 
     this.handleFileSelect = this.handleFileSelect.bind(this)
     this.handleMoveNumberChange = this.handleMoveNumberChange.bind(this)
+    this.generateSequence = this.generateSequence.bind(this)
     this._mounted = false
     this.fileInputRef = createRef()
     this.commentsRef = createRef()
@@ -44,8 +45,6 @@ export default class TrainRecall extends Component {
     }
     window.addEventListener('moveNumberChanged', this._moveNumberHandler)
 
-    // Run initial processing if there's stored SGF
-    this.runProcessingIfNeeded()
   }
 
   componentWillUnmount() {
@@ -54,65 +53,48 @@ export default class TrainRecall extends Component {
   }
 
   componentDidUpdate(prevProps, prevState) {
-    if (
-      prevState.moveNumber !== this.state.moveNumber ||
-      prevState.randomizeColor !== this.state.randomizeColor ||
-      prevState.startPos !== this.state.startPos ||
-      prevState.randomizeOrientation !== this.state.randomizeOrientation ||
-      prevState.key !== this.state.key
-    ) {
-      this.runProcessingIfNeeded()
-    }
+    // Only re-run processing when moveNumber or key change. Option toggles
+    // (randomizeVariation/color/orientation, startPos) should not trigger
+    // immediate sequence loading — the user must click Generate.
+    // Only re-run processing when `key` changes. We intentionally do NOT
+    // re-run when `moveNumber` changes — changing the move number should not
+    // trigger sequence processing automatically.
+    // Intentionally do not call runProcessingIfNeeded here; processing
+    // should only run in direct response to a file selection.
   }
 
   async runProcessingIfNeeded() {
-  const fileInput = this.fileInputRef?.current
-  const file = fileInput?.files?.[0]
-  // sequencesIndex is the catalog of stored sequences persisted earlier
-  const sequencesIndexRaw = localStorage.getItem('sequencesIndex')
-  const sequencesIndex = sequencesIndexRaw ? JSON.parse(sequencesIndexRaw) : []
+    const fileInput = this.fileInputRef?.current
+    const file = fileInput?.files?.[0]
+    // sequencesIndex is the catalog of stored sequences persisted earlier
+    const sequencesIndexRaw = localStorage.getItem('sequencesIndex')
+    const sequencesIndex = sequencesIndexRaw ? JSON.parse(sequencesIndexRaw) : []
 
     // Update global state used by processGame
     window.startPos = this.state.startPos
     window.randomizeVariation = this.state.randomizeVariation
     window.randomizeOrientation = this.state.randomizeOrientation
 
-  if (!file && (!sequencesIndex || sequencesIndex.length === 0)) return
+    if (!file && (!sequencesIndex || sequencesIndex.length === 0)) return
 
     this.setState({ loading: true })
     try {
-  if (file) {
-        // If a fresh file is available, prefer splitting it into sequences and
-        // picking a stored sequence (this keeps memory usage low).
+      // If a fresh file is available, split it into sequences and persist the
+      // sequences index. Do not auto-load any sequence here — the user must
+      // click Generate to display a sequence.
+      if (file) {
         try {
           const seqMeta = await splitFileIntoSequences(file)
-          try { localStorage.setItem('sequencesIndex', JSON.stringify(seqMeta)) } catch (e) {}
-          // pick sequence
-          const pickIndex = this.state.randomizeVariation && seqMeta.length > 0 ? Math.floor(Math.random() * seqMeta.length) : 0
-          const chosen = seqMeta[pickIndex]
-          if (chosen) {
-            await this.loadAndDisplaySequence(chosen.key)
-          }
+          try { localStorage.setItem('sequencesIndex', JSON.stringify(seqMeta)) } catch (e) { }
+          this.setState({ lastSgfFile: file.name })
         } catch (err) {
-          // fallback: try to process as a File directly
-          const startPlayer = this.state.randomizeColor ? (Math.random() < 0.5 ? 1 : -1) : 1
-          const { signMap: newSignMap, totalMoves: total, comments: moveComments } = await processGame(file, this.state.moveNumber, startPlayer)
-          if (!this._mounted) return
-          this.setState({ signMap: newSignMap, totalMoves: total, comments: moveComments || [] })
-          try { localStorage.setItem('lastProcessed', JSON.stringify({ moveNumber: this.state.moveNumber, signMap: newSignMap, totalMoves: total, startPlayer, comments: moveComments })) } catch (e) {}
+          // If splitting fails, surface the error but don't auto-display.
+          this.setState({ error: err.message })
         }
-      } else if (sequencesIndex && sequencesIndex.length > 0) {
-        // No file in input, but we have stored sequences from earlier; pick one
-        const pickIndex = this.state.randomizeVariation ? Math.floor(Math.random() * sequencesIndex.length) : 0
-        const chosen = sequencesIndex[pickIndex]
-        if (chosen) {
-          await this.loadAndDisplaySequence(chosen.key)
-        }
-      } else {
-        // no file and no stored sequences, fallback to reading raw SGF content if present
-        // No stored raw SGF fallback anymore — nothing to do here.
-        return
       }
+
+      // If no file but we have sequences stored, do nothing — wait for user
+      // to press Generate.
     } catch (err) {
       if (!this._mounted) return
       this.setState({ error: err.message })
@@ -132,13 +114,35 @@ export default class TrainRecall extends Component {
         const { signMap: newSignMap, totalMoves: total, comments: moveComments } = await processSequenceObject(seqObj, this.state.moveNumber, startPlayer)
         if (!this._mounted) return
         this.setState({ signMap: newSignMap, totalMoves: total, comments: moveComments || [] })
-        try { localStorage.setItem('lastProcessed', JSON.stringify({ moveNumber: this.state.moveNumber, sequenceKey, totalMoves: total, startPlayer, comments: moveComments })) } catch (e) {}
+        try { localStorage.setItem('lastProcessed', JSON.stringify({ moveNumber: this.state.moveNumber, sequenceKey, totalMoves: total, startPlayer, comments: moveComments })) } catch (e) { }
       }
     } catch (err) {
       console.error('Failed to load sequence:', err)
       this.setState({ error: err.message })
     }
   }
+
+  // Trigger picking and loading a sequence from the saved sequences index.
+  async generateSequence() {
+    const sequencesIndexRaw = localStorage.getItem('sequencesIndex')
+    const sequencesIndex = sequencesIndexRaw ? JSON.parse(sequencesIndexRaw) : []
+    if (!sequencesIndex || sequencesIndex.length === 0) return
+
+    this.setState({ loading: true, error: null })
+    try {
+      const pickIndex = this.state.randomizeVariation ? Math.floor(Math.random() * sequencesIndex.length) : 0
+      const chosen = sequencesIndex[pickIndex]
+      if (chosen) await this.loadAndDisplaySequence(chosen.key)
+    } catch (err) {
+      console.error('generateSequence error', err)
+      this.setState({ error: err.message })
+    } finally {
+      this.setState({ loading: false })
+    }
+  }
+
+  // (runProcessingIfNeeded will be invoked from handleFileSelect when a
+  // file is chosen — no global invocation here.)
 
   async handleFileSelect(evt) {
     const file = evt.target.files[0]
@@ -151,31 +155,18 @@ export default class TrainRecall extends Component {
     try {
       const seqMeta = await splitFileIntoSequences(file)
 
-      // Persist an index of sequences so other pages can pick from it
-      try { localStorage.setItem('sequencesIndex', JSON.stringify(seqMeta)) } catch (e) {}
+      // Persist an index of sequences so Generate can use it
+      try { localStorage.setItem('sequencesIndex', JSON.stringify(seqMeta)) } catch (e) { }
 
-      // Remember which file was loaded
+      // Remember which file was loaded (UI only)
       this.setState({ lastSgfFile: file.name })
 
-      // Pick sequence to display: if randomizeVariation use a random sequence,
-      // otherwise use the first sequence.
-      const pickIndex = this.state.randomizeVariation && seqMeta.length > 0 ? Math.floor(Math.random() * seqMeta.length) : 0
-      const chosen = seqMeta[pickIndex]
-      if (!chosen) return
-
-      // Load chosen sequence object from localStorage and process it
-      const raw = localStorage.getItem(chosen.key)
-      const seqObj = raw ? JSON.parse(raw) : null
-
-      const startPlayer = this.state.randomizeColor ? (Math.random() < 0.5 ? 1 : -1) : 1
-      if (seqObj) {
-        const { signMap: newSignMap, totalMoves: total, comments: moveComments } = await processSequenceObject(seqObj, this.state.moveNumber, startPlayer)
-        if (!this._mounted) return
-        this.setState({ signMap: newSignMap, totalMoves: total, comments: moveComments || [] })
-        try { localStorage.setItem('lastProcessed', JSON.stringify({ moveNumber: this.state.moveNumber, sequenceKey: chosen.key, totalMoves: total, startPlayer, comments: moveComments })) } catch (e) {}
-      }
-
-      // Do not persist the raw SGF content; sequences are stored separately.
+      // Do NOT auto-load any sequence here. The user must click Generate to
+      // display a sequence. This keeps behavior explicit and avoids
+      // unintended loads when toggling options.
+      // Still run any file-based processing centrally via runProcessingIfNeeded
+      // so behaviour that belongs to file selection can run in one place.
+      await this.runProcessingIfNeeded()
     } catch (err) {
       this.setState({ error: err.message })
       console.error(err)
@@ -188,7 +179,7 @@ export default class TrainRecall extends Component {
     const num = parseInt(evt.target.value, 10)
     if (isNaN(num) || num < 0) return
     this.setState({ moveNumber: num })
-    try { localStorage.setItem('moveNumber', num.toString()) } catch (e) {}
+    try { localStorage.setItem('moveNumber', num.toString()) } catch (e) { }
     // ComponentDidUpdate will call runProcessingIfNeeded which will load the
     // appropriate stored sequence (or split the current file) and update state.
   }
@@ -200,51 +191,51 @@ export default class TrainRecall extends Component {
       <div className="app">
         <h1 style={{ margin: '1rem 0', textAlign: 'center' }}>Go Recall</h1>
         <div className="app-content">
-      <div style={{ 
-          width: '100%',
-          maxWidth: '800px',
-          marginBottom: '1rem',
-          padding: '0.5rem',
-          backgroundColor: '#f5f5f5',
-          borderRadius: '4px'
-        }}>
-        <details>
-          <summary>About this app</summary>
-          <p>This is an app for practicing visualization and recall of a Go position.</p>
-          <p>It was inspired by <a href="https://www.youtube.com/watch?v=gfve7yYCS08">The Power of Visualization: How to See Moves Before They're Played | Jonas Welticke 6d</a></p>
-          <p>I do not know how valuable this method of study is or if this app implements it well. You are probably better off doing tsumego.</p>
-          <p>There are 2 main ways to use this app:</p>
-          <ol>
-            <li>Practice with variations
+          <div style={{
+            width: '100%',
+            maxWidth: '800px',
+            marginBottom: '1rem',
+            padding: '0.5rem',
+            backgroundColor: '#f5f5f5',
+            borderRadius: '4px'
+          }}>
+            <details>
+              <summary>About this app</summary>
+              <p>This is an app for practicing visualization and recall of a Go position.</p>
+              <p>It was inspired by <a href="https://www.youtube.com/watch?v=gfve7yYCS08">The Power of Visualization: How to See Moves Before They're Played | Jonas Welticke 6d</a></p>
+              <p>I do not know how valuable this method of study is or if this app implements it well. You are probably better off doing tsumego.</p>
+              <p>There are 2 main ways to use this app:</p>
               <ol>
-                <li>Load an SGF file with multiple variations such as <a href="http://waterfire.us/Kogo's%20Joseki%20Dictionary.sgf">Kogo's Joseki Dictionary</a></li>
-                <li>Set the number of moves to a resonable number (e.g. 5)</li>
-                <li>Optional: Set the variation starting position to a specific point (e.g. 3,3 to only see 3,3 joseki)</li>
-                <li>Select all 3 randomization options to get maximum variety</li>
-                <li>Visualize the position and then hit Test Recall</li>
-                <li>Try to recall the position by placing stones on an empty board</li>
-                <li>Hit Validate Recall to see how well you did</li>
-                <li>Hit Next to try another variation from the same SGF</li>
+                <li>Practice with variations
+                  <ol>
+                    <li>Load an SGF file with multiple variations such as <a href="http://waterfire.us/Kogo's%20Joseki%20Dictionary.sgf">Kogo's Joseki Dictionary</a></li>
+                    <li>Set the number of moves to a resonable number (e.g. 5)</li>
+                    <li>Optional: Set the variation starting position to a specific point (e.g. 3,3 to only see 3,3 joseki)</li>
+                    <li>Select all 3 randomization options to get maximum variety</li>
+                    <li>Visualize the position and then hit Test Recall</li>
+                    <li>Try to recall the position by placing stones on an empty board</li>
+                    <li>Hit Validate Recall to see how well you did</li>
+                    <li>Hit Next to try another variation from the same SGF</li>
+                  </ol>
+                </li>
+                <li>Practice with a single game
+                  <ol>
+                    <li>Load an SGF game such as <a href="https://homepages.cwi.nl/~aeb/go/games/games/Shusaku/#castlegames">one of the castle games</a></li>
+                    <li>Set the number of moves to a resonable number (e.g. 5)</li>
+                    <li>Disable randomization</li>
+                    <li>Visualize the position and then hit Test Recall</li>
+                    <li>Try to recall the position by placing stones on an empty board</li>
+                    <li>Hit Validate Recall to see how well you did</li>
+                    <li>Hit "Next +1 Move" to try again with one more move</li>
+                  </ol>
+                </li>
               </ol>
-            </li>
-            <li>Practice with a single game
-              <ol>
-                <li>Load an SGF game such as <a href="https://homepages.cwi.nl/~aeb/go/games/games/Shusaku/#castlegames">one of the castle games</a></li>
-                <li>Set the number of moves to a resonable number (e.g. 5)</li>
-                <li>Disable randomization</li>
-                <li>Visualize the position and then hit Test Recall</li>
-                <li>Try to recall the position by placing stones on an empty board</li>
-                <li>Hit Validate Recall to see how well you did</li>
-                <li>Hit "Next +1 Move" to try again with one more move</li>
-              </ol>
-            </li>
-          </ol>
-          More SGF files:
-          <ul>
-            <li><a href="https://xmp.net/arno/fuseki.html">Arno's fuseki database</a></li>
-          </ul>
-        </details>
-      </div>
+              More SGF files:
+              <ul>
+                <li><a href="https://xmp.net/arno/fuseki.html">Arno's fuseki database</a></li>
+              </ul>
+            </details>
+          </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <label>
@@ -279,14 +270,20 @@ export default class TrainRecall extends Component {
           </div>
 
           <div style={{ marginBottom: '0.5rem' }}>
+            <button onClick={this.generateSequence} disabled={!(function () { try { const r = localStorage.getItem('sequencesIndex'); const a = r ? JSON.parse(r) : []; return a && a.length > 0 } catch (e) { return false } })()}>
+              Generate
+            </button>
+          </div>
+
+          <div style={{ marginBottom: '0.5rem' }}>
             <label style={{ marginRight: '0.5rem' }}>
               Variations starting at:
-              <select 
+              <select
                 value={startPos}
                 onChange={(e) => {
                   const v = e.target.value
                   this.setState({ startPos: v })
-                  try { localStorage.setItem('startPos', v) } catch (e) {}
+                  try { localStorage.setItem('startPos', v) } catch (e) { }
                 }}
                 style={{ marginLeft: '0.5rem' }}
               >
@@ -314,7 +311,7 @@ export default class TrainRecall extends Component {
                 onChange={(e) => {
                   const v = !!e.target.checked
                   this.setState({ randomizeVariation: v })
-                  try { localStorage.setItem('randomizeVariation', v ? '1' : '0') } catch (e) {}
+                  try { localStorage.setItem('randomizeVariation', v ? '1' : '0') } catch (e) { }
                 }}
                 style={{ marginRight: '0.5rem' }}
               />
@@ -327,7 +324,7 @@ export default class TrainRecall extends Component {
                 onChange={(e) => {
                   const v = !!e.target.checked
                   this.setState({ randomizeColor: v })
-                  try { localStorage.setItem('randomizeColor', v ? '1' : '0') } catch (e) {}
+                  try { localStorage.setItem('randomizeColor', v ? '1' : '0') } catch (e) { }
                 }}
                 style={{ marginRight: '0.5rem' }}
               />
@@ -340,7 +337,7 @@ export default class TrainRecall extends Component {
                 onChange={(e) => {
                   const v = !!e.target.checked
                   this.setState({ randomizeOrientation: v })
-                  try { localStorage.setItem('randomizeOrientation', v ? '1' : '0') } catch (e) {}
+                  try { localStorage.setItem('randomizeOrientation', v ? '1' : '0') } catch (e) { }
                 }}
                 style={{ marginRight: '0.5rem' }}
               />
@@ -353,7 +350,7 @@ export default class TrainRecall extends Component {
               Error: {error}
             </div>
           )}
-          
+
           {loading && (
             <div style={{ marginTop: '0.5rem' }}>
               Loading...
@@ -368,9 +365,11 @@ export default class TrainRecall extends Component {
           />
 
           <div style={{ marginBottom: '1rem' }}>
-            <button onClick={() => { window.location.hash = '#/test' }}>
-              Test Recall
-            </button>
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <button onClick={() => { window.location.hash = '#/test' }}>
+                Test Recall
+              </button>
+            </div>
           </div>
 
           <Comments comments={comments} detailsRef={this.commentsRef} />
