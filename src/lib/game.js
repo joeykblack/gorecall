@@ -39,7 +39,7 @@ export async function processSequenceObject(seqObj, moveNumber, startPlayer = 1)
     let commentsArray = []
 
 
-    // Start from the first child of the game (root is seqObj.nodes[0])
+    // Start from the first child of the game (root node data is seqObj.data)
     let node = (seqObj.children && seqObj.children.length > 0) ? seqObj.children[0] : null
     while (node) {
       if (node.data) {
@@ -82,7 +82,7 @@ export async function processSequenceObject(seqObj, moveNumber, startPlayer = 1)
     return {
       signMap: finalSignMap,
       totalMoves: movesArray.length,
-      comments: Array.isArray(seqObj.comments) ? seqObj.comments : []
+      comments: Array.isArray(seqObj.comments) ? seqObj.comments : commentsArray
     }
   } catch (err) {
     console.error('Error processing sequence object:', err)

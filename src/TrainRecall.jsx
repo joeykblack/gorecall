@@ -4,6 +4,7 @@ import Reban from './components/Reban'
 import Comments from './components/Comments'
 import { splitFileIntoSequences } from './lib/sgf'
 import { processSequenceObject } from './lib/game'
+import { getSequence } from './lib/seqDB'
 
 export default class TrainRecall extends Component {
   constructor(props) {
@@ -100,8 +101,7 @@ export default class TrainRecall extends Component {
   async loadAndDisplaySequence(sequenceKey) {
     if (!sequenceKey) return
     try {
-      const raw = localStorage.getItem(sequenceKey)
-      const seqObj = raw ? JSON.parse(raw) : null
+      const seqObj = await getSequence(sequenceKey)
       const startPlayer = this.state.randomizeColor ? (Math.random() < 0.5 ? 1 : -1) : 1
       if (seqObj) {
         const { signMap: newSignMap, totalMoves: total, comments: moveComments } = await processSequenceObject(seqObj, this.state.moveNumber, startPlayer)
