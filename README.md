@@ -9,6 +9,13 @@ I do not know how valuable this method of study is or if this app implements it 
 I'm a backend dev and used ai to generate most of the javascript so it is a mess, but it works well enough for what I wanted.
 
 TODO
+- Text filter to limit variations to * Joseki *
+- Tag GB GW filter
+- bigger variation and move number buttons
+- startPos match symetrical
+- move test recall buttons
+
+Later TODO
 - install as app on phone
 - Fix result when sequence is shorter than selected number.
 - Cleanup UI
