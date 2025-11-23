@@ -1,6 +1,7 @@
 import { Component } from 'preact'
 import '@sabaki/shudan/css/goban.css'
 import Reban from './components/Reban'
+import Comments from './components/Comments'
 import { processGame } from './lib/game'
 
 export default class ValidateRecall extends Component {
@@ -15,6 +16,7 @@ export default class ValidateRecall extends Component {
       validationMessage: '',
       sgfBoard: emptyBoard,
       testBoard: emptyBoard,
+      comments: [],
       moveNumber: (() => { const saved = localStorage.getItem('moveNumber'); return saved ? parseInt(saved, 10) : 0 })()
     }
 
@@ -60,7 +62,8 @@ export default class ValidateRecall extends Component {
         if (parsed && parsed.moveNumber === this.state.moveNumber && parsed.signMap) {
           this.setState((state) => ({
             sgfBoard: parsed.signMap,
-            sgfMoves: [...state.sgfMoves, { signMap: parsed.signMap, totalMoves: parsed.totalMoves }]
+            sgfMoves: [...state.sgfMoves, { signMap: parsed.signMap, totalMoves: parsed.totalMoves }],
+            comments: parsed.comments || []
           }))
           this.validate(this.state.testMoves, parsed.signMap, parsed.totalMoves)
           this.setState({ loading: false })
@@ -170,6 +173,7 @@ export default class ValidateRecall extends Component {
             <button onClick={() => { window.dispatchEvent(new CustomEvent('moveNumberChanged', { detail: moveNumber })); window.location.hash = null }}>Next</button>
             <button onClick={this.onNextPlusOne}>Next +1 Move</button>
           </div>
+          <Comments comments={this.state.comments} detailsRef={this.commentsRef} />
         </div>
       </div>
     )

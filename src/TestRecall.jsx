@@ -1,5 +1,6 @@
 import { Component } from 'preact'
 import Reban from './components/Reban'
+import Comments from './components/Comments'
 
 export default class TestRecall extends Component {
   constructor(props) {
@@ -8,6 +9,7 @@ export default class TestRecall extends Component {
     this.state = {
       board: Array.from({ length: size }, () => Array(size).fill(null)),
       moves: [],
+      comments: [],
       nextPlayerIsBlack: (() => {
         try {
           const lastProcessed = localStorage.getItem('lastProcessed')
@@ -25,6 +27,18 @@ export default class TestRecall extends Component {
     this.pass = this.pass.bind(this)
     this.undo = this.undo.bind(this)
     this.startWithWhite = this.startWithWhite.bind(this)
+    this.commentsRef = null
+  }
+
+  componentDidMount() {
+    // load comments from lastProcessed if present
+    try {
+      const lastProcessedRaw = localStorage.getItem('lastProcessed')
+      if (lastProcessedRaw) {
+        const parsed = JSON.parse(lastProcessedRaw)
+        if (parsed && parsed.comments) this.setState({ comments: parsed.comments })
+      }
+    } catch (e) {}
   }
 
   placeStone(x, y) {
@@ -109,6 +123,8 @@ export default class TestRecall extends Component {
                   Validate
               </button>
               </div>
+              
+          <Comments comments={this.state.comments} detailsRef={this.commentsRef} />
           </div>
       </div>
     )
