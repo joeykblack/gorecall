@@ -19,7 +19,18 @@ export default class TrainRecall extends Component {
       moveNumber: (() => { try { const s = localStorage.getItem('moveNumber'); return s ? parseInt(s, 10) : 0 } catch (e) { return 0 } })(),
       randomizeColor: (() => { try { return localStorage.getItem('randomizeColor') === '1' } catch (e) { return false } })(),
       startPos: (() => { try { return localStorage.getItem('startPos') || '' } catch (e) { return '' } })(),
-      randomizeVariation: (() => { try { return localStorage.getItem('randomizeVariation') === '1' } catch (e) { return false } })(),
+      // variationMode: 'fixed' | 'random' | 'sequential'
+      variationMode: (() => {
+        try {
+          const vm = localStorage.getItem('variationMode')
+          if (vm) return vm
+          // backward-compat: if old boolean key exists, map it
+          const rv = localStorage.getItem('randomizeVariation')
+          return rv === '1' ? 'random' : 'fixed'
+        } catch (e) {
+          return 'fixed'
+        }
+      })(),
       randomizeOrientation: (() => { try { return localStorage.getItem('randomizeOrientation') === '1' } catch (e) { return false } })(),
       key: 0,
       lastSgfFile: null,
@@ -116,9 +127,11 @@ export default class TrainRecall extends Component {
 
   }
 
-  // Pick a variation index from the available sequences. If randomization is
-  // enabled the choice is random and persisted; otherwise the persisted
-  // `variationIndex` value is clamped and returned.
+  // Pick a variation index from the available sequences. Modes:
+  // - 'fixed': use persisted variationIndex (clamped)
+  // - 'random': pick random position from filtered list and persist position
+  // - 'sequential': return current variationIndex position then increment it
+  //                 (persisting the next position for the following call)
   pickVariationIndex(sequencesIndex) {
     const sequences = this.state.sequencesIndex || []
     if (!sequences || sequences.length === 0) return 0
@@ -143,14 +156,29 @@ export default class TrainRecall extends Component {
     // Update state.filteredIndices so UI and counts stay in sync
     try { this.setState({ filteredIndices: filtered }) } catch (e) { }
 
-    if (this.state.randomizeVariation) {
+    const mode = this.state.variationMode || 'fixed'
+    if (mode === 'random') {
       const pos = Math.floor(Math.random() * filtered.length)
       try { this.setState({ variationIndex: pos }) } catch (e) { }
       try { localStorage.setItem('variationIndex', pos.toString()) } catch (e) { }
+      // return the original index into sequencesIndex
       return filtered[pos]
     }
 
-    // Non-random: treat variationIndex as an index into the filtered list
+    if (mode === 'sequential') {
+      let vi = Number(this.state.variationIndex)
+      if (isNaN(vi) || vi < 0) vi = 0
+      if (filtered.length === 0) return 0
+      // current selection is modulo filtered length
+      const currentPos = vi % filtered.length
+      // persist next position for subsequent calls
+      const next = (currentPos + 1) % filtered.length
+      try { this.setState({ variationIndex: next }) } catch (e) { }
+      try { localStorage.setItem('variationIndex', next.toString()) } catch (e) { }
+      return filtered[currentPos]
+    }
+
+    // 'fixed' mode (default): treat variationIndex as an index into filtered
     let vi = Number(this.state.variationIndex)
     if (isNaN(vi) || vi < 0) vi = 0
     if (vi >= filtered.length) vi = filtered.length - 1
@@ -268,7 +296,7 @@ export default class TrainRecall extends Component {
   }
 
   render() {
-    const { signMap, comments, moveNumber, randomizeVariation, randomizeColor, randomizeOrientation, startPos, lastSgfFile, totalMoves, error, loading } = this.state
+  const { signMap, comments, moveNumber, variationMode, randomizeColor, randomizeOrientation, startPos, lastSgfFile, totalMoves, error, loading } = this.state
 
     return (
       <div className="app">
@@ -398,19 +426,48 @@ export default class TrainRecall extends Component {
 
           {/* Randomize Variations on its own line with a variation index input */}
           <div style={{ marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <label style={{ display: 'flex', alignItems: 'center' }}>
-              <input
-                type="checkbox"
-                checked={randomizeVariation}
-                onChange={(e) => {
-                  const v = !!e.target.checked
-                  this.setState({ randomizeVariation: v })
-                  try { localStorage.setItem('randomizeVariation', v ? '1' : '0') } catch (e) { }
-                }}
-                style={{ marginRight: '0.5rem' }}
-              />
-              Randomize Variations
-            </label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <div style={{ marginRight: '0.5rem' }}>Variation mode:</div>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                  <input
+                    type="radio"
+                    name="variationMode"
+                    value="fixed"
+                    checked={this.state.variationMode === 'fixed'}
+                    onChange={() => {
+                      try { this.setState({ variationMode: 'fixed' }) } catch (e) { }
+                      try { localStorage.setItem('variationMode', 'fixed') } catch (e) { }
+                    }}
+                  />
+                  Fixed
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                  <input
+                    type="radio"
+                    name="variationMode"
+                    value="random"
+                    checked={this.state.variationMode === 'random'}
+                    onChange={() => {
+                      try { this.setState({ variationMode: 'random' }) } catch (e) { }
+                      try { localStorage.setItem('variationMode', 'random') } catch (e) { }
+                    }}
+                  />
+                  Random
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                  <input
+                    type="radio"
+                    name="variationMode"
+                    value="sequential"
+                    checked={this.state.variationMode === 'sequential'}
+                    onChange={() => {
+                      try { this.setState({ variationMode: 'sequential' }) } catch (e) { }
+                      try { localStorage.setItem('variationMode', 'sequential') } catch (e) { }
+                    }}
+                  />
+                  Sequential
+                </label>
+              </div>
 
             {/* Variation index input (shows current variation number) */}
             <input
