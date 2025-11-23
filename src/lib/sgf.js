@@ -80,8 +80,9 @@ export async function splitFileIntoSequences(file) {
           }
         }
 
-        const startNode = game.children?.[0] || null
-        dfs(startNode, [])
+        game.children.forEach(child => {
+          dfs(child, [])
+        })
 
         resolve(sequencesMeta)
       } catch (err) {
