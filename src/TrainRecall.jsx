@@ -2,7 +2,8 @@ import { Component, createRef } from 'preact'
 import '@sabaki/shudan/css/goban.css'
 import Reban from './components/Reban'
 import Comments from './components/Comments'
-import { processGame } from './lib/game'
+import { processGame, processSequenceObject } from './lib/game'
+import { splitFileIntoSequences } from './lib/sgf'
 
 export default class TrainRecall extends Component {
   constructor(props) {
@@ -20,7 +21,7 @@ export default class TrainRecall extends Component {
       randomizeVariation: (() => { try { return localStorage.getItem('randomizeVariation') === '1' } catch (e) { return false } })(),
       randomizeOrientation: (() => { try { return localStorage.getItem('randomizeOrientation') === '1' } catch (e) { return false } })(),
       key: 0,
-      lastSgfFile: (() => { try { return localStorage.getItem('lastSgfName') } catch (e) { return null } })(),
+      lastSgfFile: null,
       totalMoves: 0,
       error: null,
       loading: false
@@ -65,33 +66,52 @@ export default class TrainRecall extends Component {
   }
 
   async runProcessingIfNeeded() {
-  const sgfContent = localStorage.getItem('lastSgfContent')
   const fileInput = this.fileInputRef?.current
   const file = fileInput?.files?.[0]
+  // sequencesIndex is the catalog of stored sequences persisted earlier
+  const sequencesIndexRaw = localStorage.getItem('sequencesIndex')
+  const sequencesIndex = sequencesIndexRaw ? JSON.parse(sequencesIndexRaw) : []
 
     // Update global state used by processGame
     window.startPos = this.state.startPos
     window.randomizeVariation = this.state.randomizeVariation
     window.randomizeOrientation = this.state.randomizeOrientation
 
-    if (!file && !sgfContent) return
+  if (!file && (!sequencesIndex || sequencesIndex.length === 0)) return
 
     this.setState({ loading: true })
     try {
-      if (file) {
-        const startPlayer = this.state.randomizeColor ? (Math.random() < 0.5 ? 1 : -1) : 1
-        const { signMap: newSignMap, totalMoves: total, comments: moveComments } = await processGame(file, this.state.moveNumber, startPlayer)
-        if (!this._mounted) return
-        this.setState({ signMap: newSignMap, totalMoves: total, comments: moveComments || [] })
-        try { localStorage.setItem('lastProcessed', JSON.stringify({ moveNumber: this.state.moveNumber, signMap: newSignMap, totalMoves: total, startPlayer, comments: moveComments })) } catch (e) {}
+  if (file) {
+        // If a fresh file is available, prefer splitting it into sequences and
+        // picking a stored sequence (this keeps memory usage low).
+        try {
+          const seqMeta = await splitFileIntoSequences(file)
+          try { localStorage.setItem('sequencesIndex', JSON.stringify(seqMeta)) } catch (e) {}
+          // pick sequence
+          const pickIndex = this.state.randomizeVariation && seqMeta.length > 0 ? Math.floor(Math.random() * seqMeta.length) : 0
+          const chosen = seqMeta[pickIndex]
+          if (chosen) {
+            await this.loadAndDisplaySequence(chosen.key)
+          }
+        } catch (err) {
+          // fallback: try to process as a File directly
+          const startPlayer = this.state.randomizeColor ? (Math.random() < 0.5 ? 1 : -1) : 1
+          const { signMap: newSignMap, totalMoves: total, comments: moveComments } = await processGame(file, this.state.moveNumber, startPlayer)
+          if (!this._mounted) return
+          this.setState({ signMap: newSignMap, totalMoves: total, comments: moveComments || [] })
+          try { localStorage.setItem('lastProcessed', JSON.stringify({ moveNumber: this.state.moveNumber, signMap: newSignMap, totalMoves: total, startPlayer, comments: moveComments })) } catch (e) {}
+        }
+      } else if (sequencesIndex && sequencesIndex.length > 0) {
+        // No file in input, but we have stored sequences from earlier; pick one
+        const pickIndex = this.state.randomizeVariation ? Math.floor(Math.random() * sequencesIndex.length) : 0
+        const chosen = sequencesIndex[pickIndex]
+        if (chosen) {
+          await this.loadAndDisplaySequence(chosen.key)
+        }
       } else {
-        const blob = new Blob([sgfContent], { type: 'application/x-go-sgf' })
-        const storedFile = new File([blob], 'stored.sgf', { type: 'application/x-go-sgf' })
-        const startPlayer = this.state.randomizeColor ? (Math.random() < 0.5 ? 1 : -1) : 1
-        const { signMap: newSignMap, totalMoves: total, comments: moveComments } = await processGame(storedFile, this.state.moveNumber, startPlayer)
-        if (!this._mounted) return
-        this.setState({ signMap: newSignMap, totalMoves: total, comments: moveComments || [] })
-        try { localStorage.setItem('lastProcessed', JSON.stringify({ moveNumber: this.state.moveNumber, signMap: newSignMap, totalMoves: total, startPlayer, comments: moveComments })) } catch (e) {}
+        // no file and no stored sequences, fallback to reading raw SGF content if present
+        // No stored raw SGF fallback anymore — nothing to do here.
+        return
       }
     } catch (err) {
       if (!this._mounted) return
@@ -101,31 +121,61 @@ export default class TrainRecall extends Component {
     }
   }
 
+  // Load a stored sequence from localStorage by key and display it
+  async loadAndDisplaySequence(sequenceKey) {
+    if (!sequenceKey) return
+    try {
+      const raw = localStorage.getItem(sequenceKey)
+      const seqObj = raw ? JSON.parse(raw) : null
+      const startPlayer = this.state.randomizeColor ? (Math.random() < 0.5 ? 1 : -1) : 1
+      if (seqObj) {
+        const { signMap: newSignMap, totalMoves: total, comments: moveComments } = await processSequenceObject(seqObj, this.state.moveNumber, startPlayer)
+        if (!this._mounted) return
+        this.setState({ signMap: newSignMap, totalMoves: total, comments: moveComments || [] })
+        try { localStorage.setItem('lastProcessed', JSON.stringify({ moveNumber: this.state.moveNumber, sequenceKey, totalMoves: total, startPlayer, comments: moveComments })) } catch (e) {}
+      }
+    } catch (err) {
+      console.error('Failed to load sequence:', err)
+      this.setState({ error: err.message })
+    }
+  }
+
   async handleFileSelect(evt) {
     const file = evt.target.files[0]
     if (!file) return
-
+    // When a file is selected, split it into leaf sequences and persist each
+    // sequence into localStorage. Keep only a small index in localStorage
+    // pointing to the stored sequence keys.
     this.setState({ loading: true, error: null })
 
-    window.startPos = this.state.startPos
-    window.randomizeVariation = this.state.randomizeVariation
-    window.randomizeOrientation = this.state.randomizeOrientation
-
     try {
-      const startPlayer = this.state.randomizeColor ? (Math.random() < 0.5 ? 1 : -1) : 1
-      const { signMap: newSignMap, totalMoves: total, comments: moveComments } = await processGame(file, this.state.moveNumber, startPlayer)
-      this.setState({ signMap: newSignMap, totalMoves: total, comments: moveComments || [] })
-      try { localStorage.setItem('lastProcessed', JSON.stringify({ moveNumber: this.state.moveNumber, signMap: newSignMap, totalMoves: total, startPlayer, comments: moveComments })) } catch (e) {}
+      const seqMeta = await splitFileIntoSequences(file)
 
+      // Persist an index of sequences so other pages can pick from it
+      try { localStorage.setItem('sequencesIndex', JSON.stringify(seqMeta)) } catch (e) {}
+
+      // Remember which file was loaded
       this.setState({ lastSgfFile: file.name })
-      try { localStorage.setItem('lastSgfName', file.name) } catch (e) {}
 
-      const reader = new FileReader()
-      reader.onload = (ev) => {
-        const content = ev.target.result
-        try { localStorage.setItem('lastSgfContent', content) } catch (e) {}
+      // Pick sequence to display: if randomizeVariation use a random sequence,
+      // otherwise use the first sequence.
+      const pickIndex = this.state.randomizeVariation && seqMeta.length > 0 ? Math.floor(Math.random() * seqMeta.length) : 0
+      const chosen = seqMeta[pickIndex]
+      if (!chosen) return
+
+      // Load chosen sequence object from localStorage and process it
+      const raw = localStorage.getItem(chosen.key)
+      const seqObj = raw ? JSON.parse(raw) : null
+
+      const startPlayer = this.state.randomizeColor ? (Math.random() < 0.5 ? 1 : -1) : 1
+      if (seqObj) {
+        const { signMap: newSignMap, totalMoves: total, comments: moveComments } = await processSequenceObject(seqObj, this.state.moveNumber, startPlayer)
+        if (!this._mounted) return
+        this.setState({ signMap: newSignMap, totalMoves: total, comments: moveComments || [] })
+        try { localStorage.setItem('lastProcessed', JSON.stringify({ moveNumber: this.state.moveNumber, sequenceKey: chosen.key, totalMoves: total, startPlayer, comments: moveComments })) } catch (e) {}
       }
-      reader.readAsText(file)
+
+      // Do not persist the raw SGF content; sequences are stored separately.
     } catch (err) {
       this.setState({ error: err.message })
       console.error(err)
@@ -139,22 +189,8 @@ export default class TrainRecall extends Component {
     if (isNaN(num) || num < 0) return
     this.setState({ moveNumber: num })
     try { localStorage.setItem('moveNumber', num.toString()) } catch (e) {}
-
-    // If we have a file loaded, re-run processing immediately
-  const fileInput = this.fileInputRef?.current
-  const file = fileInput?.files?.[0]
-    if (file) {
-      this.setState({ loading: true })
-      try {
-        const startPlayer = this.state.randomizeColor ? (Math.random() < 0.5 ? 1 : -1) : 1
-        const { signMap: newSignMap, comments: moveComments } = await processGame(file, num, startPlayer)
-        this.setState({ signMap: newSignMap, comments: moveComments || [] })
-      } catch (err) {
-        this.setState({ error: err.message })
-      } finally {
-        this.setState({ loading: false })
-      }
-    }
+    // ComponentDidUpdate will call runProcessingIfNeeded which will load the
+    // appropriate stored sequence (or split the current file) and update state.
   }
 
   render() {

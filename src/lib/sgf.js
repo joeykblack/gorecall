@@ -88,3 +88,79 @@ export async function parseFile(file) {
     reader.readAsText(file)
   })
 }
+
+// Read a File and split it into sequences (one per leaf) using DFS.
+// Each sequence is written directly to localStorage as a JSON object to avoid
+// keeping large amounts of data in memory. Returns an array of metadata
+// objects describing stored sequences: { key, name, firstMove, totalMoves }.
+export async function splitFileIntoSequences(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+
+    reader.onload = evt => {
+      try {
+        const sgfContent = evt.target.result
+        const [game] = parse(sgfContent)
+        if (!game) throw new Error('No game found in SGF')
+
+        const sequencesMeta = []
+        let seqCount = 0
+
+        // Traverse tree depth-first and collect moves/comments along the path
+        function dfs(node, movesAcc, commentsAcc) {
+          if (!node) return
+
+          let moves = movesAcc.slice()
+          let comments = commentsAcc.slice()
+
+          if (node.data) {
+            if (node.data.B) moves.push(node.data.B[0])
+            if (node.data.W) moves.push(node.data.W[0])
+            if (node.data.C) comments.push(node.data.C[0])
+            else comments.push(' ')
+          }
+
+          if (!node.children || node.children.length === 0) {
+            // Leaf: store this sequence as a small object in localStorage
+            seqCount += 1
+            const seqObj = {
+              moves,
+              comments,
+              info: {
+                fileName: file.name || null,
+                createdAt: Date.now()
+              }
+            }
+
+            const key = `sequence:${Date.now()}:${Math.floor(Math.random() * 1e6)}:${seqCount}`
+            try {
+              localStorage.setItem(key, JSON.stringify(seqObj))
+            } catch (e) {
+              // If storage fails, reject
+              return reject(new Error('Failed to write sequence to localStorage: ' + e.message))
+            }
+
+            sequencesMeta.push({ key, name: `${file.name}#${seqCount}`, firstMove: moves[0] || null, totalMoves: moves.length })
+            return
+          }
+
+          // Recurse into children
+          for (let i = 0; i < node.children.length; i++) {
+            dfs(node.children[i], moves, comments)
+          }
+        }
+
+        const startNode = game.children?.[0] || null
+        dfs(startNode, [], [])
+
+        resolve(sequencesMeta)
+      } catch (err) {
+        console.error('SGF split error:', err)
+        reject(new Error('Failed to split SGF file: ' + err.message))
+      }
+    }
+
+    reader.onerror = () => reject(new Error('Failed to read file'))
+    reader.readAsText(file)
+  })
+}

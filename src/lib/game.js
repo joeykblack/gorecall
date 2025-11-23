@@ -84,3 +84,49 @@ export async function processGame(file, moveNumber, startPlayer = 1) {
     throw err
   }
 }
+
+// Process a sequence object previously stored in localStorage. The sequence
+// object must have the shape { moves: string[], comments: string[] } where
+// moves are SGF two-letter coordinates (e.g., 'pd'). Returns the same shape
+// as processGame: { signMap, totalMoves, comments }.
+export async function processSequenceObject(seqObj, moveNumber, startPlayer = 1) {
+  try {
+    const movesArray = Array.isArray(seqObj.moves) ? seqObj.moves : []
+    // Start with an empty board
+    const size = 19
+    let signMap = Array.from({ length: size }, () => Array(size).fill(null))
+
+    const movesToApply = movesArray.slice(0, moveNumber)
+    let player = startPlayer
+
+    movesToApply.forEach((move, index) => {
+      const pos = sgfToPos(move)
+      if (pos) {
+        signMap = applyMove(signMap, pos, player, index + 1)
+      }
+      player = -player
+    })
+
+    // Apply orientation randomization if requested
+    let finalSignMap = signMap
+    if (window.randomizeOrientation) {
+      const rotations = Math.floor(Math.random() * 4)
+      const shouldTranspose = Math.random() < 0.5
+      for (let i = 0; i < rotations; i++) {
+        finalSignMap = finalSignMap.map((row, i) => row.map((_, j) => finalSignMap[finalSignMap.length - 1 - j][i]))
+      }
+      if (shouldTranspose) {
+        finalSignMap = finalSignMap.map((row, i) => row.map((_, j) => finalSignMap[j][i]))
+      }
+    }
+
+    return {
+      signMap: finalSignMap,
+      totalMoves: movesArray.length,
+      comments: Array.isArray(seqObj.comments) ? seqObj.comments : []
+    }
+  } catch (err) {
+    console.error('Error processing sequence object:', err)
+    throw err
+  }
+}
