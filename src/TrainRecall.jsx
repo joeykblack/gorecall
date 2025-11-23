@@ -89,6 +89,14 @@ export default class TrainRecall extends Component {
       // ignore parse errors
     }
 
+    // Restore last selected filename for UI if present
+    try {
+      const last = localStorage.getItem('lastSgfFile')
+      if (last) this.setState({ lastSgfFile: last })
+    } catch (e) {
+      // ignore
+    }
+
   }
 
   componentWillUnmount() {
@@ -225,7 +233,8 @@ export default class TrainRecall extends Component {
         if (matches.length > 0) filtered = matches
       }
 
-      this.setState({ lastSgfFile: file.name, sequencesIndex, filteredIndices: filtered })
+  try { localStorage.setItem('lastSgfFile', file.name) } catch (e) { }
+  this.setState({ lastSgfFile: file.name, sequencesIndex, filteredIndices: filtered })
 
       // Do NOT auto-load any sequence here. The user must click Generate to
       // display a sequence. This keeps behavior explicit and avoids
