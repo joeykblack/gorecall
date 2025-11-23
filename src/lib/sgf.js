@@ -72,7 +72,24 @@ export async function splitFileIntoSequences(file) {
               return reject(new Error('Failed to write sequence to IndexedDB: ' + e.message))
             }
 
-            sequencesMeta.push({ key, name: `${file.name}#${seqCount}` })
+            // Compute simple metadata: firstMove (first B/W encountered) and
+            // totalMoves (count of B/W in the chain). This avoids a full
+            // traversal later when building UI lists.
+            let firstMove = null
+            let totalMoves = 0
+            for (let i = 0; i < nodeClones.length; i++) {
+              const d = nodeClones[i].data || {}
+              if (d.B) {
+                if (!firstMove) firstMove = d.B[0]
+                totalMoves += 1
+              }
+              if (d.W) {
+                if (!firstMove) firstMove = d.W[0]
+                totalMoves += 1
+              }
+            }
+
+            sequencesMeta.push({ key, name: `${file.name}#${seqCount}`, firstMove, totalMoves })
             return
           }
 
