@@ -344,22 +344,28 @@ export default class TrainRecall extends Component {
               backgroundColor: '#f5f5f5',
               borderRadius: '4px'
             }}>
-              <details>
+              <details open>
                   <summary><strong>Comments:</strong></summary>
                   <ol style={{ margin: '0.5rem 0', paddingLeft: '1.5rem' }}>
-                  {comments.map((comment, i) => (
-                      <li key={i}>
-                      <pre style={{ 
+                  {comments.map((comment, i) => {
+                    // Do not render empty comments, but keep the original index as the key
+                    if (comment == null) return null
+                    const text = typeof comment === 'string' ? comment.trim() : String(comment)
+                    if (text === '') return null
+                    return (
+                      <li key={i} value={i + 1}>
+                        <pre style={{
                           margin: '0.25rem 0',
                           whiteSpace: 'pre-wrap',
                           wordWrap: 'break-word',
                           fontFamily: 'inherit',
                           fontSize: 'inherit'
-                      }}>
+                        }}>
                           {comment}
-                      </pre>
+                        </pre>
                       </li>
-                  ))}
+                    )
+                  })}
                   </ol>
               </details>
             </div>
