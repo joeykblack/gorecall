@@ -2,6 +2,7 @@ import { Component, createRef } from 'preact'
 import '@sabaki/shudan/css/goban.css'
 import Reban from './components/Reban'
 import Comments from './components/Comments'
+import TagSelector from './components/TagSelector'
 import { splitFileIntoSequences } from './lib/sgf'
 import { processSequenceObject } from './lib/game'
 import { getSequence } from './lib/seqDB'
@@ -502,24 +503,39 @@ export default class TrainRecall extends Component {
                 <option value="oe">5,5</option>
               </select>
             </label>
-            {/* Tag multi-select */}
-            <label style={{ marginLeft: '1rem', display: 'flex', alignItems: 'center' }}>
+            {/* Tag selector (chip-style) */}
+            <label style={{ marginLeft: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               With tag:
-              <select
-                multiple
-                value={this.state.selectedTags}
-                onChange={(e) => {
-                  const opts = Array.from(e.target.selectedOptions || []).map(o => o.value)
-                  this.setState({ selectedTags: opts }, () => {
-                    try { localStorage.setItem('selectedTags', JSON.stringify(opts)) } catch (err) { }
-                    const sequences = this.state.sequencesIndex || []
-                    if (sequences && sequences.length > 0) this.filterIndices(this.state.startPos || '', sequences)
-                  })
-                }}
-                style={{ marginLeft: '0.5rem' }}
-              >
-                <option value="joseki">joseki</option>
-              </select>
+              {/* Build unique tag options from sequencesIndex so the selector is dynamic */}
+              {
+                (() => {
+                  const sequences = this.state.sequencesIndex || []
+                  const uniq = []
+                  for (let i = 0; i < sequences.length; i++) {
+                    const t = sequences[i] && sequences[i].tags
+                    if (Array.isArray(t)) {
+                      for (let j = 0; j < t.length; j++) {
+                        const val = t[j]
+                        if (uniq.indexOf(val) === -1) uniq.push(val)
+                      }
+                    }
+                  }
+                  return (
+                    <TagSelector
+                      options={uniq}
+                      selected={this.state.selectedTags}
+                      onChange={(opts) => {
+                        this.setState({ selectedTags: opts }, () => {
+                          try { localStorage.setItem('selectedTags', JSON.stringify(opts)) } catch (err) { }
+                          const sequences = this.state.sequencesIndex || []
+                          if (sequences && sequences.length > 0) this.filterIndices(this.state.startPos || '', sequences)
+                        })
+                      }}
+                      style={{ marginLeft: '0.5rem' }}
+                    />
+                  )
+                })()
+              }
             </label>
           </div>
 
