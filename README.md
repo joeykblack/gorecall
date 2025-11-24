@@ -11,7 +11,6 @@ I'm a backend dev and used ai to generate most of the javascript so it is a mess
 TODO
 - Text filter to limit variations to * Joseki *
 - Tag GB GW filter
-- bigger variation and move number buttons
 - startPos match symetrical
 - move test recall buttons
 - fix random orientation

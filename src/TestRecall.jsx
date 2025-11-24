@@ -101,10 +101,7 @@ export default class TestRecall extends Component {
         <div className="app-content">
           <h2>Test Recall</h2>
 
-          <div style={{ marginBottom: '0.5rem' }}>
-              <button onClick={this.undo} disabled={moves.length === 0}>Undo</button>
-              <button onClick={this.pass}>Pass/Tenuki</button>
-          </div>
+          
 
 
         <Reban
@@ -115,14 +112,17 @@ export default class TestRecall extends Component {
           maxWidth={'800px'}
         />
 
-              <div style={{ marginTop: '1rem' }}>
-              <button onClick={() => {
-                  localStorage.setItem('testMoves', JSON.stringify(moves))
-                  window.location.hash = '#/validate'
-              }} disabled={moves.length === 0}>
-                  Validate
-              </button>
-              </div>
+        <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+        <button onClick={this.undo} disabled={moves.length === 0}>Undo</button>
+        <button onClick={this.pass}>Pass/Tenuki</button>
+        <div style={{ flex: 1 }} />
+        <button onClick={() => {
+          localStorage.setItem('testMoves', JSON.stringify(moves))
+          window.location.hash = '#/validate'
+        }} disabled={moves.length === 0}>
+          Validate
+        </button>
+        </div>
               
           <Comments comments={this.state.comments} detailsRef={this.commentsRef} />
           </div>
