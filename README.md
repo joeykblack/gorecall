@@ -11,7 +11,6 @@ I'm a backend dev and used ai to generate most of the javascript so it is a mess
 TODO
 - Tag GB GW filter
 - startPos match symetrical
-- fix random orientation
 
 Later TODO
 - install as app on phone
