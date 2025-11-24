@@ -63,9 +63,31 @@ export default class TrainRecall extends Component {
     this.generateSequence = this.generateSequence.bind(this)
   this.pickVariationIndex = this.pickVariationIndex.bind(this)
   this.determineStartPlayer = this.determineStartPlayer.bind(this)
+    this.decreaseMoveNumber = this.decreaseMoveNumber.bind(this)
+    this.increaseMoveNumber = this.increaseMoveNumber.bind(this)
     this._mounted = false
     this.fileInputRef = createRef()
     this.commentsRef = createRef()
+  }
+
+  decreaseMoveNumber() {
+    this.setState((state) => {
+      const cur = Number(state.moveNumber) || 0
+      let next = Math.max(0, cur - 1)
+      if (state.totalMoves && next > state.totalMoves) next = state.totalMoves
+      try { localStorage.setItem('moveNumber', next.toString()) } catch (e) { }
+      return { moveNumber: next }
+    })
+  }
+
+  increaseMoveNumber() {
+    this.setState((state) => {
+      const cur = Number(state.moveNumber) || 0
+      let next = cur + 1
+      if (state.totalMoves && next > state.totalMoves) next = state.totalMoves
+      try { localStorage.setItem('moveNumber', next.toString()) } catch (e) { }
+      return { moveNumber: next }
+    })
   }
 
   componentDidMount() {
@@ -366,18 +388,30 @@ export default class TrainRecall extends Component {
             )}
           </div>
 
-          <div style={{ marginBottom: '0.5rem' }}>
-            <label style={{ marginRight: '0.5rem' }}>
-              Number of moves (0-{totalMoves || '?'}):
-              <input
-                type="number"
-                min="0"
-                max={totalMoves || 999}
-                value={moveNumber}
-                onChange={this.handleMoveNumberChange}
-                style={{ marginLeft: '0.5rem' }}
-              />
-            </label>
+          <div style={{ marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <div style={{ marginRight: '0.5rem' }}>Number of moves (0-{totalMoves || '?' }):</div>
+            <button
+              onClick={this.decreaseMoveNumber}
+              aria-label="Decrease moves"
+              style={{ padding: '0.25rem 0.5rem' }}
+            >
+              −
+            </button>
+            <input
+              type="number"
+              min="0"
+              max={totalMoves || 999}
+              value={moveNumber}
+              onChange={this.handleMoveNumberChange}
+              style={{ width: '5rem', textAlign: 'center' }}
+            />
+            <button
+              onClick={this.increaseMoveNumber}
+              aria-label="Increase moves"
+              style={{ padding: '0.25rem 0.5rem' }}
+            >
+              +
+            </button>
           </div>
 
           <div style={{ marginBottom: '0.5rem' }}>
