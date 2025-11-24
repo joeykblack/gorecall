@@ -29,7 +29,10 @@ export function applyMove(prevSignMap, pos, player, moveNumber) {
 // object must have the shape { moves: string[], comments: string[] } where
 // moves are SGF two-letter coordinates (e.g., 'pd'). Returns the same shape
 // as processGame: { signMap, totalMoves, comments }.
-export async function processSequenceObject(seqObj, moveNumber, startPlayer = 1) {
+// `selectedTags` is an optional array of tag strings. If provided, traversal
+// will stop (include that node) when a node contains any of the selected
+// tags in its `tags` array.
+export async function processSequenceObject(seqObj, moveNumber, startPlayer = 1, selectedTags = []) {
   try {
     // Backwards-compatible: sequences stored previously had `moves`/`comments`.
     // Newer stored sequences are SGF-like game objects. If `moves` is not
@@ -45,9 +48,25 @@ export async function processSequenceObject(seqObj, moveNumber, startPlayer = 1)
       if (node.data) {
         if (node.data.B) movesArray.push(node.data.B[0])
         if (node.data.W) movesArray.push(node.data.W[0])
-        if (node.data.C) commentsArray.push(node.data.C[0])
-        else commentsArray.push(' ')
+        if (node.data.C) {
+          // Normalize comment prop (parser may produce array or string)
+          if (Array.isArray(node.data.C)) commentsArray.push(String(node.data.C[0] || ' '))
+          else commentsArray.push(String(node.data.C || ' '))
+        } else commentsArray.push(' ')
       }
+
+      // If selectedTags provided, and this node has tags, stop on this node
+      // when any selected tag is present. We include the node's move/comment
+      // and then break before traversing further.
+      if (Array.isArray(selectedTags) && selectedTags.length > 0 && Array.isArray(node.tags) && node.tags.length > 0) {
+        // check intersection
+        let found = false
+        for (let t = 0; t < selectedTags.length; t++) {
+          if (node.tags.indexOf(selectedTags[t]) !== -1) { found = true; break }
+        }
+        if (found) break
+      }
+
       node = (node.children && node.children.length > 0) ? node.children[0] : null
     }
 
