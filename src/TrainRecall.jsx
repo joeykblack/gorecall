@@ -696,7 +696,7 @@ export default class TrainRecall extends Component {
           )}
 
           {/* Generate button placed immediately above the board */}
-          <div style={{ marginBottom: '0.5rem' }}>
+          <div style={{ marginBottom: '0.5rem', marginTop: '0.5rem' }}>
             <button onClick={this.generateSequence} disabled={!(this.state.filteredIndices && this.state.filteredIndices.length > 0)}>
               Generate
             </button>
