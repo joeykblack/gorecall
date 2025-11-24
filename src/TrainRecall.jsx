@@ -39,7 +39,9 @@ export default class TrainRecall extends Component {
       loading: false
       ,
       sequencesIndex: [],
-      filteredIndices: []
+      filteredIndices: [],
+      // Selected tags for filtering sequences (e.g. ['joseki'])
+      selectedTags: (() => { try { const s = localStorage.getItem('selectedTags'); return s ? JSON.parse(s) : [] } catch (e) { return [] } })()
     }
 
     // Variation index persisted for non-random selection
@@ -134,11 +136,11 @@ export default class TrainRecall extends Component {
       if (idx && idx.length > 0) {
         // Initialize filteredIndices based on current startPos
         const startPos = this.state.startPos || ''
-        const filtered = this.filterIndicesByStartPos(startPos, idx)
+        const filtered = this.filterIndices(startPos, idx)
         // Set sequencesIndex, then compute filteredIndices and generate a
         // sequence after filteredIndices has been updated.
         this.setState({ sequencesIndex: idx }, () => {
-          this.filterIndicesByStartPos(startPos, idx, () => {
+          this.filterIndices(startPos, idx, () => {
             try {
               this.generateSequence()
             } catch (e) {
@@ -159,6 +161,11 @@ export default class TrainRecall extends Component {
       // ignore
     }
 
+    // Ensure tags-based filtering runs when we have an index already in
+    // localStorage (this covers the case where selectedTags were restored in
+    // the constructor). If sequencesIndex was already set above we'll have
+    // run filterIndices; otherwise nothing to do here.
+
   }
 
   componentWillUnmount() {
@@ -177,7 +184,7 @@ export default class TrainRecall extends Component {
   // Compute filtered indices for the given startPos from a sequences array.
   // Also updates component state.filteredIndices. If a callback is provided
   // it will be invoked after state update completes.
-  filterIndicesByStartPos(startPos, sequences, cb) {
+  filterIndices(startPos, sequences, cb) {
     const seq = Array.isArray(sequences) ? sequences : (Array.isArray(this.state.sequencesIndex) ? this.state.sequencesIndex : [])
     if (!seq || seq.length === 0) {
       try { this.setState({ filteredIndices: [] }, cb) } catch (e) { if (cb) cb() }
@@ -194,12 +201,32 @@ export default class TrainRecall extends Component {
       }
       filtered = matches.length > 0 ? matches : seq.map((_, i) => i)
     }
+    // Further filter by selected tags (all selected tags must be present
+    // on the sequence's `tags` array). Read selectedTags from state.
+    const tags = Array.isArray(this.state.selectedTags) ? this.state.selectedTags : []
+    let final = filtered
+    if (tags && tags.length > 0) {
+      const matches = []
+      for (let i = 0; i < filtered.length; i++) {
+        const idx = filtered[i]
+        const item = seq[idx]
+        const itemTags = Array.isArray(item && item.tags) ? item.tags : []
+        // check that itemTags contains all tags
+        let ok = true
+        for (let t = 0; t < tags.length; t++) {
+          if (itemTags.indexOf(tags[t]) === -1) { ok = false; break }
+        }
+        if (ok) matches.push(idx)
+      }
+      final = matches.length > 0 ? matches : []
+    }
+
     try {
-      this.setState({ filteredIndices: filtered }, cb)
+      this.setState({ filteredIndices: final }, cb)
     } catch (e) {
       if (cb) cb()
     }
-    return filtered
+    return final
   }
 
   // Pick a variation index from the available sequences. Modes:
@@ -212,7 +239,7 @@ export default class TrainRecall extends Component {
     if (!sequences || sequences.length === 0) return 0
 
   // Compute and update filteredIndices (filterIndicesByStartPos will set state)
-  const filtered = this.filterIndicesByStartPos(this.state.startPos || '', sequences)
+  const filtered = this.filterIndices(this.state.startPos || '', sequences)
 
     const mode = this.state.variationMode || 'fixed'
     if (mode === 'random') {
@@ -317,7 +344,7 @@ export default class TrainRecall extends Component {
       // so UI doesn't need to read localStorage synchronously.
       const sequencesIndex = seqMeta || []
       const startPos = this.state.startPos || ''
-      const filtered = this.filterIndicesByStartPos(startPos, sequencesIndex)
+      const filtered = this.filterIndices(startPos, sequencesIndex)
 
       try { localStorage.setItem('lastSgfFile', file.name) } catch (e) { }
       this.setState({ lastSgfFile: file.name, sequencesIndex })
@@ -455,7 +482,7 @@ export default class TrainRecall extends Component {
                     // recompute filteredIndices based on new startPos
                     const sequences = this.state.sequencesIndex || []
                     if (sequences && sequences.length > 0) {
-                      this.filterIndicesByStartPos(v, sequences)
+                      this.filterIndices(v, sequences)
                     }
                   })
                 }}
@@ -473,6 +500,25 @@ export default class TrainRecall extends Component {
                 <option value="nd">6,4</option>
 
                 <option value="oe">5,5</option>
+              </select>
+            </label>
+            {/* Tag multi-select */}
+            <label style={{ marginLeft: '1rem', display: 'flex', alignItems: 'center' }}>
+              With tag:
+              <select
+                multiple
+                value={this.state.selectedTags}
+                onChange={(e) => {
+                  const opts = Array.from(e.target.selectedOptions || []).map(o => o.value)
+                  this.setState({ selectedTags: opts }, () => {
+                    try { localStorage.setItem('selectedTags', JSON.stringify(opts)) } catch (err) { }
+                    const sequences = this.state.sequencesIndex || []
+                    if (sequences && sequences.length > 0) this.filterIndices(this.state.startPos || '', sequences)
+                  })
+                }}
+                style={{ marginLeft: '0.5rem' }}
+              >
+                <option value="joseki">joseki</option>
               </select>
             </label>
           </div>
