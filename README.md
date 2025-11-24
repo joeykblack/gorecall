@@ -12,7 +12,6 @@ TODO
 - Text filter to limit variations to * Joseki *
 - Tag GB GW filter
 - startPos match symetrical
-- move test recall buttons
 - fix random orientation
 
 Later TODO

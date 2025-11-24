@@ -61,8 +61,8 @@ export default class TrainRecall extends Component {
     this.handleFileSelect = this.handleFileSelect.bind(this)
     this.handleMoveNumberChange = this.handleMoveNumberChange.bind(this)
     this.generateSequence = this.generateSequence.bind(this)
-  this.pickVariationIndex = this.pickVariationIndex.bind(this)
-  this.determineStartPlayer = this.determineStartPlayer.bind(this)
+    this.pickVariationIndex = this.pickVariationIndex.bind(this)
+    this.determineStartPlayer = this.determineStartPlayer.bind(this)
     this.decreaseMoveNumber = this.decreaseMoveNumber.bind(this)
     this.increaseMoveNumber = this.increaseMoveNumber.bind(this)
     this.decreaseVariationIndex = this.decreaseVariationIndex.bind(this)
@@ -134,15 +134,7 @@ export default class TrainRecall extends Component {
       if (idx && idx.length > 0) {
         // Initialize filteredIndices based on current startPos
         const startPos = this.state.startPos || ''
-        let filtered = idx.map((_, i) => i)
-        if (startPos) {
-          const matches = []
-          for (let i = 0; i < idx.length; i++) {
-            const item = idx[i]
-            if (item && item.firstMove === startPos) matches.push(i)
-          }
-          if (matches.length > 0) filtered = matches
-        }
+        const filtered = this.filterIndicesByStartPos(startPos, idx)
         this.setState({ sequencesIndex: idx, filteredIndices: filtered }, () => {
           // Automatically generate a sequence on page load/refresh when we
           // have a saved sequences index.
@@ -176,6 +168,23 @@ export default class TrainRecall extends Component {
 
   }
 
+  // Compute filtered indices for the given startPos from a sequences array.
+  // Returns an array of indices (possibly empty). If no startPos is
+  // provided, returns all indices. If startPos filters to nothing, returns
+  // all indices (so the UI still has something to pick from).
+  filterIndicesByStartPos(startPos, sequences) {
+    const seq = Array.isArray(sequences) ? sequences : (Array.isArray(this.state.sequencesIndex) ? this.state.sequencesIndex : [])
+    if (!seq || seq.length === 0) return []
+    const sp = startPos || ''
+    if (!sp) return seq.map((_, i) => i)
+    const matches = []
+    for (let i = 0; i < seq.length; i++) {
+      const item = seq[i]
+      if (item && item.firstMove === sp) matches.push(i)
+    }
+    return matches.length > 0 ? matches : seq.map((_, i) => i)
+  }
+
   // Pick a variation index from the available sequences. Modes:
   // - 'fixed': use persisted variationIndex (clamped)
   // - 'random': pick random position from filtered list and persist position
@@ -185,23 +194,7 @@ export default class TrainRecall extends Component {
     const sequences = this.state.sequencesIndex || []
     if (!sequences || sequences.length === 0) return 0
 
-    const startPos = this.state.startPos || ''
-    let filtered = this.state.filteredIndices || []
-
-    // If filteredIndices is empty (e.g., initial load), initialize to all
-    if (!filtered || filtered.length === 0) filtered = sequences.map((_, i) => i)
-
-    // When startPos is set, compute filtered list from sequences
-    if (startPos) {
-      const matches = []
-      for (let i = 0; i < sequences.length; i++) {
-        const item = sequences[i]
-        if (item && item.firstMove === startPos) matches.push(i)
-      }
-      if (matches.length > 0) filtered = matches
-      else filtered = sequences.map((_, i) => i)
-    }
-
+    const filtered = this.filterIndicesByStartPos(this.state.startPos || '', sequences)
     // Update state.filteredIndices so UI and counts stay in sync
     try { this.setState({ filteredIndices: filtered }) } catch (e) { }
 
@@ -308,18 +301,10 @@ export default class TrainRecall extends Component {
       // so UI doesn't need to read localStorage synchronously.
       const sequencesIndex = seqMeta || []
       const startPos = this.state.startPos || ''
-      let filtered = sequencesIndex.map((_, i) => i)
-      if (startPos) {
-        const matches = []
-        for (let i = 0; i < sequencesIndex.length; i++) {
-          const item = sequencesIndex[i]
-          if (item && item.firstMove === startPos) matches.push(i)
-        }
-        if (matches.length > 0) filtered = matches
-      }
+      const filtered = this.filterIndicesByStartPos(startPos, sequencesIndex)
 
-  try { localStorage.setItem('lastSgfFile', file.name) } catch (e) { }
-  this.setState({ lastSgfFile: file.name, sequencesIndex, filteredIndices: filtered })
+      try { localStorage.setItem('lastSgfFile', file.name) } catch (e) { }
+      this.setState({ lastSgfFile: file.name, sequencesIndex, filteredIndices: filtered })
 
       // Do NOT auto-load any sequence here. The user must click Generate to
       // display a sequence. This keeps behavior explicit and avoids
@@ -345,7 +330,7 @@ export default class TrainRecall extends Component {
   }
 
   render() {
-  const { signMap, comments, moveNumber, variationMode, randomizeColor, randomizeOrientation, startPos, lastSgfFile, totalMoves, error, loading } = this.state
+    const { signMap, comments, moveNumber, variationMode, randomizeColor, randomizeOrientation, startPos, lastSgfFile, totalMoves, error, loading } = this.state
 
     return (
       <div className="app">
@@ -416,7 +401,7 @@ export default class TrainRecall extends Component {
           </div>
 
           <div style={{ marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <div style={{ marginRight: '0.5rem' }}>Number of moves (0-{totalMoves || '?' }):</div>
+            <div style={{ marginRight: '0.5rem' }}>Number of moves (0-{totalMoves || '?'}):</div>
             <button
               onClick={this.decreaseMoveNumber}
               aria-label="Decrease moves"
@@ -445,30 +430,22 @@ export default class TrainRecall extends Component {
             <label style={{ marginRight: '0.5rem' }}>
               Variations starting at:
               <select
-                  value={startPos}
-                  onChange={(e) => {
-                    const v = e.target.value
-                    // update startPos and recompute filteredIndices immediately
-                    this.setState({ startPos: v }, () => {
-                      try { localStorage.setItem('startPos', v) } catch (e) { }
-                      // recompute filteredIndices based on new startPos
-                      const sequences = this.state.sequencesIndex || []
-                      if (sequences && sequences.length > 0) {
-                        if (!v) {
-                          this.setState({ filteredIndices: sequences.map((_, i) => i) })
-                        } else {
-                          const matches = []
-                          for (let i = 0; i < sequences.length; i++) {
-                            const item = sequences[i]
-                            if (item && item.firstMove === v) matches.push(i)
-                          }
-                          this.setState({ filteredIndices: matches.length > 0 ? matches : sequences.map((_, i) => i) })
-                        }
-                      }
-                    })
-                  }}
-                  style={{ marginLeft: '0.5rem' }}
-                >
+                value={startPos}
+                onChange={(e) => {
+                  const v = e.target.value
+                  // update startPos and recompute filteredIndices immediately
+                  this.setState({ startPos: v }, () => {
+                    try { localStorage.setItem('startPos', v) } catch (e) { }
+                    // recompute filteredIndices based on new startPos
+                    const sequences = this.state.sequencesIndex || []
+                    if (sequences && sequences.length > 0) {
+                      const filtered = this.filterIndicesByStartPos(v, sequences)
+                      this.setState({ filteredIndices: filtered })
+                    }
+                  })
+                }}
+                style={{ marginLeft: '0.5rem' }}
+              >
                 <option value="">Any</option>
 
                 <option value="qc">3,3</option>
@@ -487,48 +464,48 @@ export default class TrainRecall extends Component {
 
           {/* Randomize Variations on its own line with a variation index input */}
           <div style={{ marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <div style={{ marginRight: '0.5rem' }}>Variation mode:</div>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                  <input
-                    type="radio"
-                    name="variationMode"
-                    value="fixed"
-                    checked={this.state.variationMode === 'fixed'}
-                    onChange={() => {
-                      try { this.setState({ variationMode: 'fixed' }) } catch (e) { }
-                      try { localStorage.setItem('variationMode', 'fixed') } catch (e) { }
-                    }}
-                  />
-                  Fixed
-                </label>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                  <input
-                    type="radio"
-                    name="variationMode"
-                    value="random"
-                    checked={this.state.variationMode === 'random'}
-                    onChange={() => {
-                      try { this.setState({ variationMode: 'random' }) } catch (e) { }
-                      try { localStorage.setItem('variationMode', 'random') } catch (e) { }
-                    }}
-                  />
-                  Random
-                </label>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                  <input
-                    type="radio"
-                    name="variationMode"
-                    value="sequential"
-                    checked={this.state.variationMode === 'sequential'}
-                    onChange={() => {
-                      try { this.setState({ variationMode: 'sequential' }) } catch (e) { }
-                      try { localStorage.setItem('variationMode', 'sequential') } catch (e) { }
-                    }}
-                  />
-                  Sequential
-                </label>
-              </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <div style={{ marginRight: '0.5rem' }}>Variation mode:</div>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                <input
+                  type="radio"
+                  name="variationMode"
+                  value="fixed"
+                  checked={this.state.variationMode === 'fixed'}
+                  onChange={() => {
+                    try { this.setState({ variationMode: 'fixed' }) } catch (e) { }
+                    try { localStorage.setItem('variationMode', 'fixed') } catch (e) { }
+                  }}
+                />
+                Fixed
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                <input
+                  type="radio"
+                  name="variationMode"
+                  value="random"
+                  checked={this.state.variationMode === 'random'}
+                  onChange={() => {
+                    try { this.setState({ variationMode: 'random' }) } catch (e) { }
+                    try { localStorage.setItem('variationMode', 'random') } catch (e) { }
+                  }}
+                />
+                Random
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                <input
+                  type="radio"
+                  name="variationMode"
+                  value="sequential"
+                  checked={this.state.variationMode === 'sequential'}
+                  onChange={() => {
+                    try { this.setState({ variationMode: 'sequential' }) } catch (e) { }
+                    try { localStorage.setItem('variationMode', 'sequential') } catch (e) { }
+                  }}
+                />
+                Sequential
+              </label>
+            </div>
 
             {/* Variation index input (shows current variation number) with +/- buttons */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
