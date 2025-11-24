@@ -135,14 +135,16 @@ export default class TrainRecall extends Component {
         // Initialize filteredIndices based on current startPos
         const startPos = this.state.startPos || ''
         const filtered = this.filterIndicesByStartPos(startPos, idx)
-        this.setState({ sequencesIndex: idx, filteredIndices: filtered }, () => {
-          // Automatically generate a sequence on page load/refresh when we
-          // have a saved sequences index.
-          try {
-            this.generateSequence()
-          } catch (e) {
-            // ignore errors from auto-generation
-          }
+        // Set sequencesIndex, then compute filteredIndices and generate a
+        // sequence after filteredIndices has been updated.
+        this.setState({ sequencesIndex: idx }, () => {
+          this.filterIndicesByStartPos(startPos, idx, () => {
+            try {
+              this.generateSequence()
+            } catch (e) {
+              // ignore
+            }
+          })
         })
       }
     } catch (e) {
@@ -172,17 +174,32 @@ export default class TrainRecall extends Component {
   // Returns an array of indices (possibly empty). If no startPos is
   // provided, returns all indices. If startPos filters to nothing, returns
   // all indices (so the UI still has something to pick from).
-  filterIndicesByStartPos(startPos, sequences) {
+  // Compute filtered indices for the given startPos from a sequences array.
+  // Also updates component state.filteredIndices. If a callback is provided
+  // it will be invoked after state update completes.
+  filterIndicesByStartPos(startPos, sequences, cb) {
     const seq = Array.isArray(sequences) ? sequences : (Array.isArray(this.state.sequencesIndex) ? this.state.sequencesIndex : [])
-    if (!seq || seq.length === 0) return []
-    const sp = startPos || ''
-    if (!sp) return seq.map((_, i) => i)
-    const matches = []
-    for (let i = 0; i < seq.length; i++) {
-      const item = seq[i]
-      if (item && item.firstMove === sp) matches.push(i)
+    if (!seq || seq.length === 0) {
+      try { this.setState({ filteredIndices: [] }, cb) } catch (e) { if (cb) cb() }
+      return []
     }
-    return matches.length > 0 ? matches : seq.map((_, i) => i)
+    const sp = startPos || ''
+    let filtered
+    if (!sp) filtered = seq.map((_, i) => i)
+    else {
+      const matches = []
+      for (let i = 0; i < seq.length; i++) {
+        const item = seq[i]
+        if (item && item.firstMove === sp) matches.push(i)
+      }
+      filtered = matches.length > 0 ? matches : seq.map((_, i) => i)
+    }
+    try {
+      this.setState({ filteredIndices: filtered }, cb)
+    } catch (e) {
+      if (cb) cb()
+    }
+    return filtered
   }
 
   // Pick a variation index from the available sequences. Modes:
@@ -194,9 +211,8 @@ export default class TrainRecall extends Component {
     const sequences = this.state.sequencesIndex || []
     if (!sequences || sequences.length === 0) return 0
 
-    const filtered = this.filterIndicesByStartPos(this.state.startPos || '', sequences)
-    // Update state.filteredIndices so UI and counts stay in sync
-    try { this.setState({ filteredIndices: filtered }) } catch (e) { }
+  // Compute and update filteredIndices (filterIndicesByStartPos will set state)
+  const filtered = this.filterIndicesByStartPos(this.state.startPos || '', sequences)
 
     const mode = this.state.variationMode || 'fixed'
     if (mode === 'random') {
@@ -304,7 +320,7 @@ export default class TrainRecall extends Component {
       const filtered = this.filterIndicesByStartPos(startPos, sequencesIndex)
 
       try { localStorage.setItem('lastSgfFile', file.name) } catch (e) { }
-      this.setState({ lastSgfFile: file.name, sequencesIndex, filteredIndices: filtered })
+      this.setState({ lastSgfFile: file.name, sequencesIndex })
 
       // Do NOT auto-load any sequence here. The user must click Generate to
       // display a sequence. This keeps behavior explicit and avoids
@@ -439,8 +455,7 @@ export default class TrainRecall extends Component {
                     // recompute filteredIndices based on new startPos
                     const sequences = this.state.sequencesIndex || []
                     if (sequences && sequences.length > 0) {
-                      const filtered = this.filterIndicesByStartPos(v, sequences)
-                      this.setState({ filteredIndices: filtered })
+                      this.filterIndicesByStartPos(v, sequences)
                     }
                   })
                 }}
