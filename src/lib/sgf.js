@@ -72,13 +72,16 @@ export async function splitFileIntoSequences(file) {
               return reject(new Error('Failed to write sequence to IndexedDB: ' + e.message))
             }
 
-            // Compute simple metadata: firstMove (first B/W encountered) and
-            // totalMoves (count of B/W in the chain). This avoids a full
-            // traversal later when building UI lists.
+            // Compute simple metadata: firstMove (first B/W encountered),
+            // totalMoves (count of B/W in the chain), and detect tags such
+            // as joseki by scanning node comments (C).
             let firstMove = null
             let totalMoves = 0
+            const tags = []
+            const josekiRe = /\*\s*Joseki\s*\*/i
             for (let i = 0; i < nodeClones.length; i++) {
               const d = nodeClones[i].data || {}
+              // detect moves
               if (d.B) {
                 if (!firstMove) firstMove = d.B[0]
                 totalMoves += 1
@@ -87,9 +90,22 @@ export async function splitFileIntoSequences(file) {
                 if (!firstMove) firstMove = d.W[0]
                 totalMoves += 1
               }
+
+              // detect joseki tag in comments (C). C may be a string or array
+              // depending on parser; normalize to a string and test.
+              if (d.C) {
+                let commentText = ''
+                if (Array.isArray(d.C)) commentText = d.C.join(' ')
+                else commentText = String(d.C)
+                if (josekiRe.test(commentText)) {
+                  if (tags.indexOf('joseki') === -1) tags.push('joseki')
+                }
+              }
             }
 
-            sequencesMeta.push({ key, name: `${file.name}#${seqCount}`, firstMove, totalMoves })
+            const meta = { key, name: `${file.name}#${seqCount}`, firstMove, totalMoves }
+            if (tags.length > 0) meta.tags = tags
+            sequencesMeta.push(meta)
             return
           }
 
