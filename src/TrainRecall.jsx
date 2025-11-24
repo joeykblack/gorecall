@@ -345,10 +345,22 @@ export default class TrainRecall extends Component {
       // so UI doesn't need to read localStorage synchronously.
       const sequencesIndex = seqMeta || []
       const startPos = this.state.startPos || ''
-      const filtered = this.filterIndices(startPos, sequencesIndex)
 
+      // Clear any selected tags when a new file is chosen so filters don't
+      // accidentally persist across different datasets. Persist the cleared
+      // selection to localStorage and recompute filteredIndices after state
+      // has been updated.
+      try { localStorage.setItem('selectedTags', JSON.stringify([])) } catch (e) { }
       try { localStorage.setItem('lastSgfFile', file.name) } catch (e) { }
-      this.setState({ lastSgfFile: file.name, sequencesIndex })
+      this.setState({ lastSgfFile: file.name, sequencesIndex, selectedTags: [] }, () => {
+        // Recompute filteredIndices now that sequencesIndex and selectedTags
+        // are in state.
+        try {
+          this.filterIndices(startPos, sequencesIndex)
+        } catch (e) {
+          // ignore
+        }
+      })
 
       // Do NOT auto-load any sequence here. The user must click Generate to
       // display a sequence. This keeps behavior explicit and avoids
