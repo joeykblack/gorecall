@@ -50,6 +50,9 @@ export async function splitFileIntoSequences(file) {
               }
             }
 
+            // Build the minimal SGF-like game object (root + chain). We'll
+            // compute metadata (including tags) next and then persist the
+            // sequence so any per-node tag fields are included in storage.
             const seqObj = {
               // Store the root node's data rather than a non-existent `nodes` array.
               data: game.data ? JSON.parse(JSON.stringify(game.data)) : {},
@@ -60,21 +63,11 @@ export async function splitFileIntoSequences(file) {
               }
             }
 
-            // Use a stable key that includes the original file name (sanitized)
-            // and the sequence index. Avoid date/random components so keys are
-            // easier to correlate with the source file.
-            const safeName = (file.name || 'unknown').replace(/[^a-zA-Z0-9._-]/g, '_')
-            const key = `seq:${safeName}:${seqCount}`
-            try {
-              await saveSequence(key, seqObj)
-            } catch (e) {
-              // If storage fails, reject
-              return reject(new Error('Failed to write sequence to IndexedDB: ' + e.message))
-            }
-
             // Compute simple metadata: firstMove (first B/W encountered),
             // totalMoves (count of B/W in the chain), and detect tags such
-            // as joseki by scanning node comments (C).
+            // as joseki by scanning node comments (C). When we detect a tag
+            // in a particular node's comment we also attach a `tags` field
+            // to that nodeClone so it will be persisted with the sequence.
             let firstMove = null
             let totalMoves = 0
             const tags = []
@@ -92,19 +85,41 @@ export async function splitFileIntoSequences(file) {
               }
 
               // detect joseki tag in comments (C). C may be a string or array
-              // depending on parser; normalize to a string and test.
+              // depending on parser; normalize to a string and test. If found,
+              // attach the tag to both the sequence-level tags array and the
+              // individual nodeClone so it persists with the saved game.
               if (d.C) {
                 let commentText = ''
                 if (Array.isArray(d.C)) commentText = d.C.join(' ')
                 else commentText = String(d.C)
                 if (josekiRe.test(commentText)) {
                   if (tags.indexOf('joseki') === -1) tags.push('joseki')
+                  // attach tag to the nodeClone
+                  nodeClones[i].tags = nodeClones[i].tags || []
+                  if (nodeClones[i].tags.indexOf('joseki') === -1) nodeClones[i].tags.push('joseki')
                 }
               }
             }
 
-            const meta = { key, name: `${file.name}#${seqCount}`, firstMove, totalMoves }
+            const meta = { key: null, name: `${file.name}#${seqCount}`, firstMove, totalMoves }
+
+            // Use a stable key that includes the original file name (sanitized)
+            // and the sequence index. Avoid date/random components so keys are
+            // easier to correlate with the source file.
+            const safeName = (file.name || 'unknown').replace(/[^a-zA-Z0-9._-]/g, '_')
+            const key = `seq:${safeName}:${seqCount}`
+            meta.key = key
             if (tags.length > 0) meta.tags = tags
+
+            try {
+              // Persist the sequence after we've attached any per-node tags
+              // so those changes are actually stored in IndexedDB.
+              await saveSequence(key, seqObj)
+            } catch (e) {
+              // If storage fails, reject
+              return reject(new Error('Failed to write sequence to IndexedDB: ' + e.message))
+            }
+
             sequencesMeta.push(meta)
             return
           }
