@@ -65,6 +65,8 @@ export default class TrainRecall extends Component {
   this.determineStartPlayer = this.determineStartPlayer.bind(this)
     this.decreaseMoveNumber = this.decreaseMoveNumber.bind(this)
     this.increaseMoveNumber = this.increaseMoveNumber.bind(this)
+    this.decreaseVariationIndex = this.decreaseVariationIndex.bind(this)
+    this.increaseVariationIndex = this.increaseVariationIndex.bind(this)
     this._mounted = false
     this.fileInputRef = createRef()
     this.commentsRef = createRef()
@@ -87,6 +89,31 @@ export default class TrainRecall extends Component {
       if (state.totalMoves && next > state.totalMoves) next = state.totalMoves
       try { localStorage.setItem('moveNumber', next.toString()) } catch (e) { }
       return { moveNumber: next }
+    })
+  }
+
+  decreaseVariationIndex() {
+    this.setState((state) => {
+      const cur = Number(state.variationIndex) || 0
+      let next = Math.max(0, cur - 1)
+      // clamp to available filtered length if present
+      const filtered = Array.isArray(state.filteredIndices) && state.filteredIndices.length > 0 ? state.filteredIndices : (Array.isArray(state.sequencesIndex) ? state.sequencesIndex.map((_, i) => i) : [])
+      const max = Math.max(0, filtered.length - 1)
+      if (next > max) next = max
+      try { localStorage.setItem('variationIndex', next.toString()) } catch (e) { }
+      return { variationIndex: next }
+    })
+  }
+
+  increaseVariationIndex() {
+    this.setState((state) => {
+      const cur = Number(state.variationIndex) || 0
+      const filtered = Array.isArray(state.filteredIndices) && state.filteredIndices.length > 0 ? state.filteredIndices : (Array.isArray(state.sequencesIndex) ? state.sequencesIndex.map((_, i) => i) : [])
+      const max = Math.max(0, filtered.length - 1)
+      let next = cur + 1
+      if (next > max) next = max
+      try { localStorage.setItem('variationIndex', next.toString()) } catch (e) { }
+      return { variationIndex: next }
     })
   }
 
@@ -503,19 +530,35 @@ export default class TrainRecall extends Component {
                 </label>
               </div>
 
-            {/* Variation index input (shows current variation number) */}
-            <input
-              type="number"
-              min={0}
-              value={this.state.variationIndex}
-              onChange={(e) => {
-                let v = parseInt(e.target.value, 10)
-                if (Number.isNaN(v)) v = 0
-                this.setState({ variationIndex: v })
-                try { localStorage.setItem('variationIndex', v.toString()) } catch (err) { }
-              }}
-              style={{ width: '5rem', marginLeft: '0.5rem' }}
-            />
+            {/* Variation index input (shows current variation number) with +/- buttons */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+              <button
+                onClick={this.decreaseVariationIndex}
+                aria-label="Decrease variation"
+                style={{ padding: '0.25rem 0.5rem' }}
+              >
+                −
+              </button>
+              <input
+                type="number"
+                min={0}
+                value={this.state.variationIndex}
+                onChange={(e) => {
+                  let v = parseInt(e.target.value, 10)
+                  if (Number.isNaN(v)) v = 0
+                  this.setState({ variationIndex: v })
+                  try { localStorage.setItem('variationIndex', v.toString()) } catch (err) { }
+                }}
+                style={{ width: '5rem', textAlign: 'center' }}
+              />
+              <button
+                onClick={this.increaseVariationIndex}
+                aria-label="Increase variation"
+                style={{ padding: '0.25rem 0.5rem' }}
+              >
+                +
+              </button>
+            </div>
 
             {/* Available variations count (based on filteredIndices) */}
             <div style={{ marginLeft: '0.5rem', color: '#444' }}>
