@@ -17,7 +17,7 @@ export default class TestRecall extends Component {
             const { startPlayer } = JSON.parse(lastProcessed)
             return startPlayer === 1
           }
-        } catch (e) {}
+        } catch (e) { }
         return true
       })()
     }
@@ -38,7 +38,7 @@ export default class TestRecall extends Component {
         const parsed = JSON.parse(lastProcessedRaw)
         if (parsed && parsed.comments) this.setState({ comments: parsed.comments })
       }
-    } catch (e) {}
+    } catch (e) { }
   }
 
   placeStone(x, y) {
@@ -101,31 +101,31 @@ export default class TestRecall extends Component {
         <div className="app-content">
           <h2>Test Recall</h2>
 
-          
 
 
-        <Reban
-          signMap={board}
-          markerMap={board.map(row => row.map(cell => cell?.moveNumber ? ({ type: 'label', label: cell.moveNumber.toString() }) : null))}
-          showCoordinates={true}
-          onVertexClick={this.handleVertexClick}
-          maxWidth={'800px'}
-        />
 
-        <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-        <button onClick={this.undo} disabled={moves.length === 0}>Undo</button>
-        <button onClick={this.pass}>Pass/Tenuki</button>
-        <div style={{ flex: 1 }} />
-        <button onClick={() => {
-          localStorage.setItem('testMoves', JSON.stringify(moves))
-          window.location.hash = '#/validate'
-        }} disabled={moves.length === 0}>
-          Validate
-        </button>
-        </div>
-              
-          <Comments comments={this.state.comments} detailsRef={this.commentsRef} />
+          <Reban
+            signMap={board}
+            markerMap={board.map(row => row.map(cell => cell?.moveNumber ? ({ type: 'label', label: cell.moveNumber.toString() }) : null))}
+            showCoordinates={true}
+            onVertexClick={this.handleVertexClick}
+            maxWidth={'800px'}
+          />
+
+          <div style={{ marginTop: '1rem', marginBottom: '1rem', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+            <button onClick={this.undo} disabled={moves.length === 0}>Undo</button>
+            <button onClick={this.pass}>Pass/Tenuki</button>
+            <div style={{ flex: 1 }} />
+            <button onClick={() => {
+              localStorage.setItem('testMoves', JSON.stringify(moves))
+              window.location.hash = '#/validate'
+            }} disabled={moves.length === 0}>
+              Validate
+            </button>
           </div>
+
+          <Comments comments={this.state.comments} detailsRef={this.commentsRef} />
+        </div>
       </div>
     )
   }

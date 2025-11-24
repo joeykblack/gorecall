@@ -166,7 +166,7 @@ export default class ValidateRecall extends Component {
             <p>{validationMessage}</p>
           </div>
 
-          <div style={{ marginTop: '1rem', display: 'flex', gap: '1rem' }}>
+          <div style={{ marginTop: '1rem', marginBottom: '1rem', display: 'flex', gap: '1rem' }}>
             <button onClick={() => history.back()}>Try Again</button>
             <button onClick={() => { window.location.hash = null }}>Restart</button>
             <button onClick={() => { window.dispatchEvent(new CustomEvent('moveNumberChanged', { detail: moveNumber })); window.location.hash = null }}>Next</button>
