@@ -32,7 +32,7 @@ export function applyMove(prevSignMap, pos, player, moveNumber) {
 // `selectedTags` is an optional array of tag strings. If provided, traversal
 // will stop (include that node) when a node contains any of the selected
 // tags in its `tags` array.
-export async function processSequenceObject(seqObj, moveNumber, startPlayer = 1, selectedTags = []) {
+export async function processSequenceObject(seqObj, moveNumber, startPlayer = 1, selectedTags = [], randomizeOrientation = false) {
   try {
     // Backwards-compatible: sequences stored previously had `moves`/`comments`.
     // Newer stored sequences are SGF-like game objects. If `moves` is not
@@ -87,7 +87,7 @@ export async function processSequenceObject(seqObj, moveNumber, startPlayer = 1,
 
     // Apply orientation randomization if requested
     let finalSignMap = signMap
-    if (window.randomizeOrientation) {
+    if (randomizeOrientation) {
       const rotations = Math.floor(Math.random() * 4)
       const shouldTranspose = Math.random() < 0.5
       for (let i = 0; i < rotations; i++) {

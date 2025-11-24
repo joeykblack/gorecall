@@ -294,7 +294,7 @@ export default class TrainRecall extends Component {
     try {
       const seqObj = await getSequence(sequenceKey)
       if (seqObj) {
-        const { signMap: newSignMap, totalMoves: total, comments: moveComments } = await processSequenceObject(seqObj, this.state.moveNumber, startPlayer, this.state.selectedTags)
+        const { signMap: newSignMap, totalMoves: total, comments: moveComments } = await processSequenceObject(seqObj, this.state.moveNumber, startPlayer, this.state.selectedTags, this.state.randomizeOrientation)
         if (!this._mounted) return
         this.setState({ signMap: newSignMap, totalMoves: total, comments: moveComments || [] })
         try { localStorage.setItem('lastProcessed', JSON.stringify({ moveNumber: this.state.moveNumber, sequenceKey, totalMoves: total, signMap: newSignMap, startPlayer, comments: moveComments })) } catch (e) { }
