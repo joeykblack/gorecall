@@ -72,6 +72,20 @@ export async function splitFileIntoSequences(file) {
             let totalMoves = 0
             const tags = []
             const josekiRe = /\*\s*Joseki\s*\*/i
+            // jhash: when a joseki tag is detected, compute a short hash of
+            // the moves up to and including that node so sequences can be
+            // identified by joseki position.
+            let jhash = null
+
+            // Simple FNV-1a 32-bit hash -> 8-char hex
+            function fnv1a32Hex(str) {
+              let h = 0x811c9dc5 >>> 0
+              for (let p = 0; p < str.length; p++) {
+                h ^= str.charCodeAt(p)
+                h = (h + ((h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24))) >>> 0
+              }
+              return ('0000000' + h.toString(16)).slice(-8)
+            }
             for (let i = 0; i < nodeClones.length; i++) {
               const d = nodeClones[i].data || {}
               // detect moves
@@ -93,7 +107,19 @@ export async function splitFileIntoSequences(file) {
                 if (Array.isArray(d.C)) commentText = d.C.join(' ')
                 else commentText = String(d.C)
                 if (josekiRe.test(commentText)) {
-                  if (tags.indexOf('joseki') === -1) tags.push('joseki')
+                  if (tags.indexOf('joseki') === -1) {
+                    tags.push('joseki')
+                    // compute jhash from moves up to this node (inclusive)
+                    const moves = []
+                    for (let k = 0; k <= i; k++) {
+                      const kd = nodeClones[k].data || {}
+                      if (kd.B) moves.push(String(kd.B[0]))
+                      if (kd.W) moves.push(String(kd.W[0]))
+                    }
+                    if (moves.length > 0) {
+                      jhash = fnv1a32Hex(moves.join(','))
+                    }
+                  }
                   // attach tag to the nodeClone
                   nodeClones[i].tags = nodeClones[i].tags || []
                   if (nodeClones[i].tags.indexOf('joseki') === -1) nodeClones[i].tags.push('joseki')
@@ -110,6 +136,7 @@ export async function splitFileIntoSequences(file) {
             const key = `seq:${safeName}:${seqCount}`
             meta.key = key
             if (tags.length > 0) meta.tags = tags
+            if (jhash) meta.jhash = jhash
 
             try {
               // Persist the sequence after we've attached any per-node tags
