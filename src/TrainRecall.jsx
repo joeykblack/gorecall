@@ -220,6 +220,25 @@ export default class TrainRecall extends Component {
         if (ok) matches.push(idx)
       }
       final = matches.length > 0 ? matches : []
+
+      // If we're filtering by joseki, deduplicate by jhash so similar
+      // joseki positions only appear once. Keep the first occurrence and
+      // skip subsequent items with the same jhash.
+      if (tags.indexOf('joseki') !== -1 && final.length > 0) {
+        const seen = new Set()
+        const dedup = []
+        for (let ii = 0; ii < final.length; ii++) {
+          const idx = final[ii]
+          const item = seq[idx] || {}
+          const h = item.jhash
+          if (h) {
+            if (seen.has(h)) continue
+            seen.add(h)
+          }
+          dedup.push(idx)
+        }
+        final = dedup
+      }
     }
 
     try {
