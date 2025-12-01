@@ -431,7 +431,8 @@ export default class TrainRecall extends Component {
                     <li>Load an SGF file with multiple variations such as <a href="http://waterfire.us/Kogo's%20Joseki%20Dictionary.sgf">Kogo's Joseki Dictionary</a></li>
                     <li>Set the number of moves to a resonable number (e.g. 5)</li>
                     <li>Optional: Set the variation starting position to a specific point (e.g. 3,3 to only see 3,3 joseki)</li>
-                    <li>Select all 3 randomization options to get maximum variety</li>
+                    <li>Set Variation Mode to Random or Sequential</li>
+                    <li>Select Randomize Color and Randomize Orientation to get maximum variety</li>
                     <li>Visualize the position and then hit Test Recall</li>
                     <li>Try to recall the position by placing stones on an empty board</li>
                     <li>Hit Validate Recall to see how well you did</li>
@@ -442,6 +443,7 @@ export default class TrainRecall extends Component {
                   <ol>
                     <li>Load an SGF game such as <a href="https://homepages.cwi.nl/~aeb/go/games/games/Shusaku/#castlegames">one of the castle games</a></li>
                     <li>Set the number of moves to a resonable number (e.g. 5)</li>
+                    <li>Set Variation Mode to Fixed</li>
                     <li>Disable randomization</li>
                     <li>Visualize the position and then hit Test Recall</li>
                     <li>Try to recall the position by placing stones on an empty board</li>
