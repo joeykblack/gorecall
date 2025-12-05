@@ -44,22 +44,57 @@ export async function processSequenceObject(seqObj, moveNumber, startPlayer = 1,
 
     // Start from the first child of the game (root node data is seqObj.data)
     let node = (seqObj.children && seqObj.children.length > 0) ? seqObj.children[0] : null
+
+    // Prepare an empty board and apply moves as we encounter them. We
+    // determine the player for each move from the node's B/W property. If
+    // the first move's color doesn't match `startPlayer`, we'll reverse the
+    // color for all moves so the displayed side matches the requested
+    // starting player.
+    const size = 19
+    let signMap = Array.from({ length: size }, () => Array(size).fill(null))
+
+    let totalMovesCount = 0
+    let appliedCount = 0
+    let firstMoveColor = null
+    let reverseColors = false
+
     while (node) {
       if (node.data) {
-        if (node.data.B) movesArray.push(node.data.B[0])
-        if (node.data.W) movesArray.push(node.data.W[0])
+        // comments: normalize as before (one comment per node)
         if (node.data.C) {
-          // Normalize comment prop (parser may produce array or string)
           if (Array.isArray(node.data.C)) commentsArray.push(String(node.data.C[0] || ' '))
           else commentsArray.push(String(node.data.C || ' '))
         } else commentsArray.push(' ')
+
+        // Process B then W to preserve existing ordering
+        const processMove = (moveStr, colorVal) => {
+          if (!moveStr) return
+          totalMovesCount += 1
+          if (firstMoveColor === null) {
+            firstMoveColor = colorVal
+            // If the provided startPlayer doesn't match the first move's
+            // color, we will reverse all colors.
+            reverseColors = (firstMoveColor !== startPlayer)
+          }
+
+          const effectivePlayer = reverseColors ? -colorVal : colorVal
+
+          // Apply only up to requested moveNumber
+          appliedCount += 1
+          if (appliedCount <= moveNumber) {
+            const pos = sgfToPos(moveStr)
+            if (pos) signMap = applyMove(signMap, pos, effectivePlayer, appliedCount)
+          }
+        }
+
+        if (node.data.B) processMove(node.data.B[0], 1)
+        if (node.data.W) processMove(node.data.W[0], -1)
       }
 
       // If selectedTags provided, and this node has tags, stop on this node
       // when any selected tag is present. We include the node's move/comment
-      // and then break before traversing further.
+      // (already applied above) and then break before traversing further.
       if (Array.isArray(selectedTags) && selectedTags.length > 0 && Array.isArray(node.tags) && node.tags.length > 0) {
-        // check intersection
         let found = false
         for (let t = 0; t < selectedTags.length; t++) {
           if (node.tags.indexOf(selectedTags[t]) !== -1) { found = true; break }
@@ -70,20 +105,7 @@ export async function processSequenceObject(seqObj, moveNumber, startPlayer = 1,
       node = (node.children && node.children.length > 0) ? node.children[0] : null
     }
 
-    // Start with an empty board
-    const size = 19
-    let signMap = Array.from({ length: size }, () => Array(size).fill(null))
-
-    const movesToApply = movesArray.slice(0, moveNumber)
-    let player = startPlayer
-
-    movesToApply.forEach((move, index) => {
-      const pos = sgfToPos(move)
-      if (pos) {
-        signMap = applyMove(signMap, pos, player, index + 1)
-      }
-      player = -player
-    })
+    const totalMoves = totalMovesCount
 
     // Apply orientation randomization if requested
     let finalSignMap = signMap
@@ -100,7 +122,7 @@ export async function processSequenceObject(seqObj, moveNumber, startPlayer = 1,
 
     return {
       signMap: finalSignMap,
-      totalMoves: movesArray.length,
+      totalMoves: totalMoves,
       comments: Array.isArray(seqObj.comments) ? seqObj.comments : commentsArray
     }
   } catch (err) {
