@@ -58,6 +58,38 @@ export async function processSequenceObject(seqObj, moveNumber, startPlayer = 1,
     let firstMoveColor = null
     let reverseColors = false
 
+    // Process root setup stones (AB/AW) if present on the root node. Keep
+    // track of their coordinates so we can reverse them later if we detect
+    // that move colors need to be reversed to match `startPlayer`.
+    const rootPositions = []
+    if (seqObj && seqObj.data) {
+      const root = seqObj.data
+      if (root.AB) {
+        const arr = Array.isArray(root.AB) ? root.AB : [root.AB]
+        for (let i = 0; i < arr.length; i++) {
+          const mv = arr[i]
+          const pos = sgfToPos(mv)
+          if (pos) {
+            const [x, y] = pos
+            signMap[y][x] = { sign: 1, moveNumber: null }
+            rootPositions.push([x, y])
+          }
+        }
+      }
+      if (root.AW) {
+        const arr = Array.isArray(root.AW) ? root.AW : [root.AW]
+        for (let i = 0; i < arr.length; i++) {
+          const mv = arr[i]
+          const pos = sgfToPos(mv)
+          if (pos) {
+            const [x, y] = pos
+            signMap[y][x] = { sign: -1, moveNumber: null }
+            rootPositions.push([x, y])
+          }
+        }
+      }
+    }
+
     while (node) {
       if (node.data) {
         // comments: normalize as before (one comment per node)
@@ -106,6 +138,19 @@ export async function processSequenceObject(seqObj, moveNumber, startPlayer = 1,
     }
 
     const totalMoves = totalMovesCount
+
+    // If we discovered that move colors needed to be reversed after we had
+    // already placed root setup stones, flip those root stones so their
+    // colors match the displayed moves.
+    if (reverseColors && rootPositions.length > 0) {
+      for (let i = 0; i < rootPositions.length; i++) {
+        const [x, y] = rootPositions[i]
+        const cell = signMap[y] && signMap[y][x]
+        if (cell && typeof cell.sign === 'number') {
+          cell.sign = -cell.sign
+        }
+      }
+    }
 
     // Apply orientation randomization if requested
     let finalSignMap = signMap
