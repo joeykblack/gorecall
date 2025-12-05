@@ -46,6 +46,30 @@ export default class ValidateRecall extends Component {
           board[move.y][move.x] = { sign: move.sign, moveNumber: move.moveNumber }
         }
       })
+
+      // Also pre-populate any AB/AW setup stones from lastProcessed, so the
+      // test board shows the starting position. Only copy unnumbered root
+      // stones (moveNumber == null) and do not overwrite user's moves.
+      try {
+        const lastProcessedRaw = localStorage.getItem('lastProcessed')
+        if (lastProcessedRaw) {
+          const parsed = JSON.parse(lastProcessedRaw)
+          if (parsed && parsed.signMap && Array.isArray(parsed.signMap)) {
+            const sm = parsed.signMap
+            for (let y = 0; y < sm.length; y++) {
+              const row = sm[y] || []
+              for (let x = 0; x < (row.length || 19); x++) {
+                const cell = row[x]
+                if (cell && (cell.moveNumber == null) && !board[y][x]) {
+                  board[y][x] = { sign: cell.sign, moveNumber: null }
+                }
+              }
+            }
+          }
+        }
+      } catch (e) {
+        // ignore
+      }
       this.setState({ testMoves: moves, testBoard: board })
     } else {
       this.setState({ loading: false })
