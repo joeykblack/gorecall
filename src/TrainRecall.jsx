@@ -454,7 +454,11 @@ export default class TrainRecall extends Component {
               </ol>
               More SGF files:
               <ul>
+                <li><a href="http://waterfire.us/Kogo's%20Joseki%20Dictionary.sgf">Kogo's Joseki Dictionary</a></li>
+                <li><a href="https://homepages.cwi.nl/~aeb/go/games/games/Shusaku/#castlegames">Castle games</a></li>
                 <li><a href="https://xmp.net/arno/fuseki.html">Arno's fuseki database</a></li>
+                <li><a href="https://joeykblack.github.io/gorecall/sgf/Double-threat-ladder-maker.sgf">Double threat ladder maker</a></li>
+                <li><a href="https://joeykblack.github.io/gorecall/sgf/J-Group.sgf">J Group</a></li>
               </ul>
             </details>
           </div>
