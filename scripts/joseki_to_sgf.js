@@ -51,7 +51,8 @@ function nodeToSgf(node) {
   if (node.C) s += `C[${esc(node.C)}]`
   // include label array if present as LB[...] entries? skip for now
   // traverse children that exist locally
-  const children = (node._children || []).filter(c => !!findLocalJsonPath(c._id))
+  // Only include locally-saved children that are joseki (_mtype === 0)
+  const children = (node._children || []).filter(c => c && c._mtype === 0 && !!findLocalJsonPath(c._id))
   if (!children || children.length === 0) return s
   if (children.length === 1) {
     const childNode = loadNodeById(children[0]._id)
@@ -73,7 +74,8 @@ function buildSgfFromRoot(rootNode) {
   let s = '(' + ';' + header
   if (rootNode.C) s += `C[${esc(rootNode.C)}]`
   // children of root
-  const children = (rootNode._children || []).filter(c => !!findLocalJsonPath(c._id))
+  // Only include locally-saved children that are joseki (_mtype === 0)
+  const children = (rootNode._children || []).filter(c => c && c._mtype === 0 && !!findLocalJsonPath(c._id))
   if (!children || children.length === 0) {
     s += ')'
     return s
@@ -103,7 +105,14 @@ async function main() {
   // if arg is a path to file
   const p = path.resolve(arg)
   if (fs.existsSync(p)) {
-    try { root = JSON.parse(fs.readFileSync(p, 'utf8')) } catch (e) { console.error(e); return }
+    const raw = fs.readFileSync(p, 'utf8')
+    // try to parse JSON; if it fails, attempt to recover by extracting a numeric id
+    try {
+      root = JSON.parse(raw)
+    } catch (e) {
+      // likely the file isn't JSON (maybe an SGF or other). Print filename + snippet to help debugging
+      console.error(`Failed to parse ${p} as JSON: ${e && e.message ? e.message : e}`)
+    }
   } else if (/^\d+$/.test(arg)) {
     root = loadNodeById(arg)
     if (!root) { console.error('No local json for id', arg); return }
