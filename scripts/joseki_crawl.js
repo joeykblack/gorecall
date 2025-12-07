@@ -3,6 +3,13 @@ const fs = require('fs')
 const path = require('path')
 const https = require('https')
 
+// _mtype key
+// 0 = joseki
+// 1 = good sequence
+// 2 = mistake
+// 3 = trik play
+// 4 = question
+
 const OUTDIR = path.resolve(__dirname, '..', 'josekipedia')
 if (!fs.existsSync(OUTDIR)) fs.mkdirSync(OUTDIR, { recursive: true })
 
@@ -78,7 +85,8 @@ async function dfs(id) {
     return
   }
 
-  const children = Array.isArray(obj._children) ? obj._children : []
+  // Only consider children that are marked as joseki (_mtype === 0)
+  const children = Array.isArray(obj._children) ? obj._children.filter(c => c && c._mtype === 0) : []
   if (children.length === 0) {
     sequencesSeen += 1
     console.log(`id=${id}: end sequence (#${sequencesSeen})`)
