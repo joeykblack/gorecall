@@ -35,6 +35,7 @@ function fetchJson(url) {
 }
 
 const visited = new Set()
+let sequencesSeen = 0
 
 async function dfs(id) {
   if (visited.has(id)) return
@@ -79,7 +80,8 @@ async function dfs(id) {
 
   const children = Array.isArray(obj._children) ? obj._children : []
   if (children.length === 0) {
-    console.log(`id=${id}: end sequence`)
+    sequencesSeen += 1
+    console.log(`id=${id}: end sequence (#${sequencesSeen})`)
     return
   }
 
