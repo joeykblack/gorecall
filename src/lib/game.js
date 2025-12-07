@@ -58,14 +58,14 @@ export async function processSequenceObject(seqObj, moveNumber, startPlayer = 1,
     let firstMoveColor = null
     let reverseColors = false
 
-    // Process root setup stones (AB/AW) if present on the root node. Keep
-    // track of their coordinates so we can reverse them later if we detect
-    // that move colors need to be reversed to match `startPlayer`.
+    // Process AB/AW/AE setup for any node. We extract this into a helper so
+    // we can apply root setup and also setup on the first child node.
     const rootPositions = []
-    if (seqObj && seqObj.data) {
-      const root = seqObj.data
-      if (root.AB) {
-        const arr = Array.isArray(root.AB) ? root.AB : [root.AB]
+    function applySetupFromNode(nodeData) {
+      if (!nodeData) return
+
+      if (nodeData.AB) {
+        const arr = Array.isArray(nodeData.AB) ? nodeData.AB : [nodeData.AB]
         for (let i = 0; i < arr.length; i++) {
           const mv = arr[i]
           const pos = sgfToPos(mv)
@@ -76,8 +76,9 @@ export async function processSequenceObject(seqObj, moveNumber, startPlayer = 1,
           }
         }
       }
-      if (root.AW) {
-        const arr = Array.isArray(root.AW) ? root.AW : [root.AW]
+
+      if (nodeData.AW) {
+        const arr = Array.isArray(nodeData.AW) ? nodeData.AW : [nodeData.AW]
         for (let i = 0; i < arr.length; i++) {
           const mv = arr[i]
           const pos = sgfToPos(mv)
@@ -88,7 +89,28 @@ export async function processSequenceObject(seqObj, moveNumber, startPlayer = 1,
           }
         }
       }
+
+      if (nodeData.AE) {
+        const arr = Array.isArray(nodeData.AE) ? nodeData.AE : [nodeData.AE]
+        for (let i = 0; i < arr.length; i++) {
+          const mv = arr[i]
+          const pos = sgfToPos(mv)
+          if (pos) {
+            const [x, y] = pos
+            if (signMap[y]) signMap[y][x] = null
+            // remove from rootPositions if present
+            for (let ri = rootPositions.length - 1; ri >= 0; ri--) {
+              const rp = rootPositions[ri]
+              if (rp[0] === x && rp[1] === y) rootPositions.splice(ri, 1)
+            }
+          }
+        }
+      }
     }
+
+    // Apply setup from root and also from the first child node (if any).
+    if (seqObj && seqObj.data) applySetupFromNode(seqObj.data)
+    if (seqObj && seqObj.children && seqObj.children.length > 0 && seqObj.children[0].data) applySetupFromNode(seqObj.children[0].data)
 
     while (node) {
       if (node.data) {
