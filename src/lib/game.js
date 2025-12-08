@@ -55,12 +55,32 @@ export async function processSequenceObject(seqObj, moveNumber, startPlayer = 1,
 
     let totalMovesCount = 0
     let appliedCount = 0
-    let firstMoveColor = null
-    let reverseColors = false
+
+    // Determine the color of the first move in the variation chain so we can
+    // decide whether to reverse colors before applying setup stones. This
+    // prevents needing to flip root stones afterwards.
+    function getFirstMoveColor(seq) {
+      if (!seq) return null
+      let n = (seq.children && seq.children.length > 0) ? seq.children[0] : null
+      while (n) {
+        if (n.data) {
+          if (n.data.B) return 1
+          if (n.data.W) return -1
+        }
+        n = (n.children && n.children.length > 0) ? n.children[0] : null
+      }
+      return null
+    }
+
+    const firstMoveColor = getFirstMoveColor(seqObj)
+    const reverseColors = (firstMoveColor !== null) ? (firstMoveColor !== startPlayer) : false
+    const colorForBlack = reverseColors ? -1 : 1
+    const colorForWhite = reverseColors ? 1 : -1
 
     // Process AB/AW/AE setup for any node. We extract this into a helper so
-    // we can apply root setup and also setup on the first child node.
-    const rootPositions = []
+    // we can apply root setup and also setup on the first child node. Setup
+    // stones use the already-determined color mapping so they are correct
+    // immediately.
     function applySetupFromNode(nodeData) {
       if (!nodeData) return
 
@@ -71,8 +91,7 @@ export async function processSequenceObject(seqObj, moveNumber, startPlayer = 1,
           const pos = sgfToPos(mv)
           if (pos) {
             const [x, y] = pos
-            signMap[y][x] = { sign: 1, moveNumber: null }
-            rootPositions.push([x, y])
+            signMap[y][x] = { sign: colorForBlack, moveNumber: null }
           }
         }
       }
@@ -84,8 +103,7 @@ export async function processSequenceObject(seqObj, moveNumber, startPlayer = 1,
           const pos = sgfToPos(mv)
           if (pos) {
             const [x, y] = pos
-            signMap[y][x] = { sign: -1, moveNumber: null }
-            rootPositions.push([x, y])
+            signMap[y][x] = { sign: colorForWhite, moveNumber: null }
           }
         }
       }
@@ -98,11 +116,6 @@ export async function processSequenceObject(seqObj, moveNumber, startPlayer = 1,
           if (pos) {
             const [x, y] = pos
             if (signMap[y]) signMap[y][x] = null
-            // remove from rootPositions if present
-            for (let ri = rootPositions.length - 1; ri >= 0; ri--) {
-              const rp = rootPositions[ri]
-              if (rp[0] === x && rp[1] === y) rootPositions.splice(ri, 1)
-            }
           }
         }
       }
@@ -124,13 +137,6 @@ export async function processSequenceObject(seqObj, moveNumber, startPlayer = 1,
         const processMove = (moveStr, colorVal) => {
           if (!moveStr) return
           totalMovesCount += 1
-          if (firstMoveColor === null) {
-            firstMoveColor = colorVal
-            // If the provided startPlayer doesn't match the first move's
-            // color, we will reverse all colors.
-            reverseColors = (firstMoveColor !== startPlayer)
-          }
-
           const effectivePlayer = reverseColors ? -colorVal : colorVal
 
           // Apply only up to requested moveNumber
@@ -161,18 +167,8 @@ export async function processSequenceObject(seqObj, moveNumber, startPlayer = 1,
 
     const totalMoves = totalMovesCount
 
-    // If we discovered that move colors needed to be reversed after we had
-    // already placed root setup stones, flip those root stones so their
-    // colors match the displayed moves.
-    if (reverseColors && rootPositions.length > 0) {
-      for (let i = 0; i < rootPositions.length; i++) {
-        const [x, y] = rootPositions[i]
-        const cell = signMap[y] && signMap[y][x]
-        if (cell && typeof cell.sign === 'number') {
-          cell.sign = -cell.sign
-        }
-      }
-    }
+    // root setup stones were applied with the final color mapping above,
+    // so there's no need to flip them here.
 
     // Apply orientation randomization if requested
     let finalSignMap = signMap
