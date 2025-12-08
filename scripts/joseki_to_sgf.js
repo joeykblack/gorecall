@@ -4,6 +4,64 @@ const path = require('path')
 
 const BASE = path.resolve(__dirname, '..', 'josekipedia')
 
+var jlabels = {
+1: 'Good for white.',
+2: 'Good for black.',
+3: 'White has good influence.',
+4: 'Black has good influence.',
+5: 'This requires a favorable ladder.',
+6: '% requires a favorable ladder.',
+7: 'Leads to a ko.',
+8: '% leads to a ko.',
+9: 'White can tenuki.',
+10: 'Black can tenuki.',
+11: 'White takes the corner.',
+12: 'Black takes the corner.',
+13: 'Solid move.',
+14: 'Old pattern.',
+15: 'Necessary.',
+16: 'Sacrifice play.',
+17: 'White is thick.',
+18: 'Black is thick.',
+19: 'Tesuji.',
+20: 'White collapses.',
+21: 'Black collapses.',
+22: 'Modern pattern.',
+23: 'Position is settled.',
+24: 'White has good profit.',
+25: 'Black has good profit.',
+26: 'Vital point.',
+27: 'Simple position.',
+28: 'Complicated position.',
+29: 'Fighting pattern.',
+30: 'Running battle.',
+31: 'Probing move.',
+32: 'Honte.',
+33: 'Leads to complicated variations.',
+34: '% leads to complicated variations.',
+35: 'Kills.',
+36: 'Reducing move.',
+37: '% kills.',
+38: '% reduces.',
+39: 'Takes sente.',
+40: 'Overplay.',
+41: '% is an overplay.',
+42: 'Leaves weaknesses.',
+43: 'Makes life.',
+44: 'Refutes the trick play.',
+45: 'Position is even.',
+46: 'Slightly good for black.',
+47: 'Slightly good for white.',
+48: 'White connects.',
+49: 'Black connects.',
+50: 'Ko.',
+51: 'Black is sealed in.',
+52: 'White is sealed in.',
+53: 'Slack.',
+54: 'Black has bad shape.',
+55: 'White has bad shape.'
+};
+
 function nestedPathForId(id) {
   const idStr = String(id)
   const parts = idStr.length > 1 ? idStr.slice(0, -1).split('') : []
@@ -36,6 +94,31 @@ function esc(s) {
   return String(s).replace(/\\/g, '\\\\').replace(/\]/g, '\\]')
 }
 
+function buildComment(node) {
+  if (!node) return ''
+  const values = []
+  // labels first: collect label texts in numeric order
+  if (Array.isArray(node._labels) && node._labels.length > 0) {
+    const sorted = node._labels.slice().map(Number).sort((a, b) => a - b)
+    for (const id of sorted) {
+      const text = jlabels[id] !== undefined ? jlabels[id] : String(id)
+      values.push(text)
+    }
+  }
+
+  // then the normal comment if present
+  if (node.C) {
+    let commentText = ''
+    if (Array.isArray(node.C)) commentText = String(node.C[0] || '')
+    else commentText = String(node.C || '')
+    values.push(commentText)
+  }
+
+  if (values.length === 0) return ''
+  // single property C with multiple bracketed values: C[val1][val2][...]
+  return 'C[' + values.map(v => esc(v)).join('][') + ']'
+}
+
 function moveProp(node) {
   if (!node) return ''
   if (node.B) return `B[${node.B}]`
@@ -48,7 +131,8 @@ function nodeToSgf(node) {
   let s = ';'
   const mv = moveProp(node)
   if (mv) s += mv
-  if (node.C) s += `C[${esc(node.C)}]`
+  const c = buildComment(node)
+  if (c) s += c
   // include label array if present as LB[...] entries? skip for now
   // traverse children that exist locally
   // Only include locally-saved children that are joseki (_mtype === 0)
@@ -72,7 +156,8 @@ function buildSgfFromRoot(rootNode) {
   // root properties: use standard header
   const header = 'GM[1]FF[4]SZ[19]'
   let s = '(' + ';' + header
-  if (rootNode.C) s += `C[${esc(rootNode.C)}]`
+  const rc = buildComment(rootNode)
+  if (rc) s += rc
   // children of root
   // Only include locally-saved children that are joseki (_mtype === 0)
   const children = (rootNode._children || []).filter(c => c && c._mtype === 0 && !!findLocalJsonPath(c._id))

@@ -129,8 +129,11 @@ export async function processSequenceObject(seqObj, moveNumber, startPlayer = 1,
       if (node.data) {
         // comments: normalize as before (one comment per node)
         if (node.data.C) {
-          if (Array.isArray(node.data.C)) commentsArray.push(String(node.data.C[0] || ' '))
-          else commentsArray.push(String(node.data.C || ' '))
+          if (Array.isArray(node.data.C)) {
+            // Merge multiple comment entries into one string separated by newlines
+            const merged = node.data.C.map(c => String(c || '')).join('\n')
+            commentsArray.push(merged || ' ')
+          } else commentsArray.push(String(node.data.C || ' '))
         } else commentsArray.push(' ')
 
         // Process B then W to preserve existing ordering
