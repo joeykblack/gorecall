@@ -280,7 +280,7 @@ export default class TrainRecall extends Component {
       const next = (currentPos + 1) % filtered.length
       try { this.setState({ variationIndex: next }) } catch (e) { }
       try { localStorage.setItem('variationIndex', next.toString()) } catch (e) { }
-      return filtered[currentPos]
+      return filtered[next]
     }
 
     // 'fixed' mode (default): treat variationIndex as an index into filtered
