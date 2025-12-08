@@ -86,7 +86,7 @@ async function dfs(id) {
   }
 
   // Only consider children that are marked as joseki (_mtype === 0)
-  const children = Array.isArray(obj._children) ? obj._children.filter(c => c && c._mtype === 0) : []
+  const children = Array.isArray(obj._children) ? obj._children.slice(0, 9).filter(c => c && c._mtype === 0) : []
   if (children.length === 0) {
     sequencesSeen += 1
     console.log(`id=${id}: end sequence (#${sequencesSeen})`)

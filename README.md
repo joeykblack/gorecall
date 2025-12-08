@@ -53,3 +53,5 @@ Scripts:
 - `npm run dev` — start dev server
 - `npm run build` — build production file (single index.html in the docs folder for github.io)
 - `npm run preview` — locally preview the production build
+- `node ./scripts/joseki_crawl.js 41` - crawl josekipedia starting at node 41
+- `node ./scripts/joseki_to_sgf.js 1 josekipedia/1.sgf` - convert josekipedia json to sgf starting at node 1

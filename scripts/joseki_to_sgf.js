@@ -52,7 +52,7 @@ function nodeToSgf(node) {
   // include label array if present as LB[...] entries? skip for now
   // traverse children that exist locally
   // Only include locally-saved children that are joseki (_mtype === 0)
-  const children = (node._children || []).filter(c => c && c._mtype === 0 && !!findLocalJsonPath(c._id))
+  const children = (node._children || []).slice(0, 9).filter(c => c && c._mtype === 0 && !!findLocalJsonPath(c._id))
   if (!children || children.length === 0) return s
   if (children.length === 1) {
     const childNode = loadNodeById(children[0]._id)
