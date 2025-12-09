@@ -459,6 +459,7 @@ export default class TrainRecall extends Component {
                 <li><a href="https://xmp.net/arno/fuseki.html">Arno's fuseki database</a></li>
                 <li><a href="https://joeykblack.github.io/gorecall/sgf/Double-threat-ladder-maker.sgf">Double threat ladder maker</a></li>
                 <li><a href="https://joeykblack.github.io/gorecall/sgf/J-Group.sgf">J Group</a></li>
+                <li><a href="https://joeykblack.github.io/gorecall/sgf/josekipedia-33-joseki.sgf">Josekipedia 3-3 Joseki</a></li>
               </ul>
             </details>
           </div>
