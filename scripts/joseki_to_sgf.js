@@ -62,6 +62,127 @@ var jlabels = {
 55: 'White has bad shape.'
 };
 
+var jsources = 
+{
+  "100tips": {
+    "name": "100 Tips for Amateur Players 1",
+    "senseis": "100TipsForAmateurPlayersI",
+    "lang": "en"
+  },
+  "100tips2": {
+    "name": "100 Tips for Amateur Players 2",
+    "senseis": "100TipsForAmateurPlayersII",
+    "lang": "en"
+  },
+  "dobj21": {
+    "name": "21st Century Dictionary of Basic Joseki",
+    "senseis": "",
+    "lang": "en"
+  },
+  "21st": {
+    "name": "21st Century New Openings",
+    "senseis": "21stCenturyNewOpenings",
+    "lang": "en"
+  },
+  "38bj": {
+    "name": "38 Basic Joseki",
+    "senseis": "38BasicJoseki",
+    "lang": "en"
+  },
+  "ctp": {
+    "name": "A Compendium Of Trick Plays",
+    "senseis": "ACompendiumOfTrickPlays",
+    "lang": "en"
+  },
+  "aaj": {
+    "name": "All About Joseki",
+    "senseis": "AllAboutJoseki",
+    "lang": "en"
+  },
+  "afg": {
+    "name": "Appreciating Famous games",
+    "senseis": "AppreciatingFamousGames",
+    "lang": "en"
+  },
+  "cosmic": {
+    "name": "Cosmic Go: A Guide to Four-Stone Handicap Games",
+    "senseis": "CosmicGo",
+    "lang": "en"
+  },
+  "dobj": {
+    "name": "Dictionary Of Basic Joseki",
+    "senseis": "DictionaryOfBasicJoseki",
+    "lang": "en"
+  },
+  "eoj": {
+    "name": "Encyclopedia of Joseki",
+    "senseis": "GendaiJosekiJiten",
+    "lang": "zh"
+  },
+  "ej": {
+    "name": "Essential Joseki",
+    "senseis": "EssentialJoseki",
+    "lang": "en"
+  },
+  "jiot": {
+    "name": "Jungsuk In Our Time",
+    "senseis": "JungsukInOurTime",
+    "lang": "en"
+  },
+  "ksob": {
+    "name": "Korean Style of Baduk",
+    "senseis": "KoreanStyleOfBaduk",
+    "lang": "en"
+  },
+  "mgs": {
+    "name": "Making Good Shape",
+    "senseis": "MakingGoodShape",
+    "lang": "en"
+  },
+  "mjf1": {
+    "name": "Modern Joseki and Fuseki Volume 1",
+    "senseis": "ModernJosekiAndFusekiVol1",
+    "lang": "en"
+  },
+  "mjf2": {
+    "name": "Modern Joseki and Fuseki Volume 2",
+    "senseis": "ModernJosekiAndFusekiVol2",
+    "lang": "en"
+  },
+  "nm": {
+    "name": "New Moves",
+    "senseis": "",
+    "lang": "en"
+  },
+  "pacjm": {
+    "name": "Punishing and Correcting Joseki Mistakes",
+    "senseis": "PunishingAndCorrectingJosekiMistakes",
+    "lang": "en"
+  },
+  "ssj": {
+    "name": "Sekai no Shin Joseki",
+    "senseis": "",
+    "lang": "ja"
+  },
+  "shojiten": {
+    "name": "Shin Hayawakari Shojiten",
+    "senseis": "ShinHayawakariShojiten",
+    "lang": "ja"
+  },
+  "sps": {
+    "name": "Star Point Joseki",
+    "senseis": "StarPointJoseki",
+    "lang": "en"
+  },
+  "tij": {
+    "name": "Tricks in Joseki",
+    "senseis": "TricksInJoseki",
+    "lang": "en"
+  }
+}
+;
+
+
 function nestedPathForId(id) {
   const idStr = String(id)
   const parts = idStr.length > 1 ? idStr.slice(0, -1).split('') : []
@@ -112,6 +233,18 @@ function buildComment(node) {
     if (Array.isArray(node.C)) commentText = String(node.C[0] || '')
     else commentText = String(node.C || '')
     values.push(commentText)
+  }
+
+  // then sources: map node._sources entries to jsources names when available
+  if (Array.isArray(node._sources) && node._sources.length > 0) {
+    for (const s of node._sources) {
+      // _sources entries are often [key, extra]
+      const key = Array.isArray(s) ? s[0] : s
+      if (!key) continue
+      const src = jsources && jsources[key]
+      const name = src && src.name ? src.name : String(key)
+      values.push(name)
+    }
   }
 
   if (values.length === 0) return ''
