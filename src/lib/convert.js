@@ -63,25 +63,26 @@ export async function reviewToTraining(file) {
           // Create root node with AB/AW
           const rootNode = {
             data: {
-              ...game.data, // Copy root properties
               AB: blackStones.length > 0 ? blackStones : undefined,
               AW: whiteStones.length > 0 ? whiteStones : undefined
             },
             children: [branchNode] // The branch starts here
           }
 
-          return {
-            data: {},
-            children: [rootNode]
-          }
+          return rootNode
         }
 
         // Start collecting from root
         collectBranches(game)
 
-        // Create SGF string with all training games
-        const sgfParts = trainingGames.map(game => stringify([game]))
-        const newSgfContent = sgfParts.join('\n\n')
+        // Create a single SGF with all training games under one root
+        const singleGame = {
+          data: game.data || {}, // Copy original root properties
+          children: trainingGames
+        }
+
+        // Create SGF string
+        const newSgfContent = stringify([singleGame])
 
         // Return as a new File object
         const newFile = new File([newSgfContent], `training_${file.name}`, { type: 'application/x-go-sgf' })
